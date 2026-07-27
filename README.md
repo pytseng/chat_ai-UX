@@ -1,11 +1,27 @@
-# chat_ai UX
+# SecretStash
 
-A public workspace for exploring chat and AI product UX — research, patterns, prototypes, and case studies.
+Mobile-first chat PoC for travel & fashion styling, based on the [Figma design](https://www.figma.com/design/uhdU04wu6CwxM5YA6cvg7N/Cursor-Learning-File?node-id=184-524).
 
-## Status
+## Setup
 
-Project setup — content coming soon.
+```bash
+npm install
+cp .env.example .env.local
+# Add your ANTHROPIC_API_KEY to .env.local
+npm run dev
+```
 
-## Author
+Open http://localhost:5173 on your phone (same network) or resize the browser to mobile width.
 
-Po Yen Tseng
+## Stack
+
+- **Frontend:** Vite + React + TypeScript
+- **Backend:** Express proxy for Claude API (keeps API key off the client)
+- **Model:** Claude Sonnet via streaming SSE
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start API (3001) + Vite (5173) |
+| `npm run build` | Production frontend build |
