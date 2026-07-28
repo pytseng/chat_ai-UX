@@ -1,11 +1,19 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import type { Message } from "../api/chat";
+import type { Message, ReasoningStatus } from "../api/chat";
+import { ReasoningUI } from "./ReasoningUI";
+import { FluidDotsSpinner } from "./FluidDotsSpinner";
 import {
   ArrowUpIcon,
   CodeIcon,
   ImageIcon,
   MicIcon,
 } from "./Icons";
+
+export const SUGGESTION_PROMPTS = [
+  "What to pack for Tokyo in spring?",
+  "Layers for hiking Patagonia",
+  "Street style for a Paris weekend",
+] as const;
 
 type ChatInputProps = {
   value: string;
@@ -43,7 +51,7 @@ export function ChatInput({
         <textarea
           ref={textareaRef}
           className="chat-box__field"
-          placeholder="What would you like to know?"
+          placeholder="e.g. What to pack for hiking in Patagonia?"
           rows={1}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -99,40 +107,78 @@ export function ChatInput({
 type MessageListProps = {
   messages: Message[];
   streamingId: string | null;
+  reasoning: ReasoningStatus | null;
   error: string | null;
+  onSuggestion?: (text: string) => void;
+  suggestionsDisabled?: boolean;
 };
 
 export function MessageList({
   messages,
   streamingId,
+  reasoning,
   error,
+  onSuggestion,
+  suggestionsDisabled = false,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingId, error]);
+  }, [messages, streamingId, reasoning, error]);
+
+  const streamingMessage = streamingId
+    ? messages.find((m) => m.id === streamingId)
+    : undefined;
+  const showReasoning =
+    Boolean(reasoning) &&
+    Boolean(streamingId) &&
+    !streamingMessage?.content;
 
   return (
     <div className="messages">
       {messages.length === 0 && !error && (
-        <p className="messages__empty">
-          Ask about what to pack for a trip, street style for a destination, or
-          functional layers for the weather.
-        </p>
+        <div className="messages__empty-state">
+          <p className="messages__empty">
+            Ask about what to pack for a trip, street style for a destination, or
+            functional layers for the weather.
+          </p>
+          {onSuggestion && (
+            <div className="suggestions" role="group" aria-label="Suggested questions">
+              {SUGGESTION_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  className="suggestion-chip"
+                  disabled={suggestionsDisabled}
+                  onClick={() => onSuggestion(prompt)}
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
       {messages.map((msg) => (
-        <div
-          key={msg.id}
-          className={[
-            "message",
-            msg.role === "user" ? "message--user" : "message--assistant",
-            msg.id === streamingId ? "message--streaming" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-        >
-          {msg.content || (msg.id === streamingId ? "" : "…")}
+        <div key={msg.id}>
+          {msg.id === streamingId && showReasoning && reasoning && (
+            <ReasoningUI segments={reasoning.segments} stepKey={reasoning.id} />
+          )}
+          <div
+            className={[
+              "message",
+              msg.role === "user" ? "message--user" : "message--assistant",
+              msg.id === streamingId ? "message--streaming" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            {msg.content}
+            {msg.id === streamingId && !showReasoning && (
+              <FluidDotsSpinner className="fluid-dots--message" />
+            )}
+          </div>
         </div>
       ))}
       {error && <div className="message message--error">{error}</div>}

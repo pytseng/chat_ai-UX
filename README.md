@@ -18,6 +18,8 @@ Open http://localhost:5173 on your phone (same network) or resize the browser to
 - **Frontend:** Vite + React + TypeScript
 - **Backend:** Express proxy for Claude API (keeps API key off the client)
 - **Model:** Claude Sonnet via streaming SSE
+- **Web search:** Anthropic `web_search` for news/events (not weather)
+- **Weather:** [Open-Meteo](https://open-meteo.com/) via `get_weather` tool — live outdoor forecasts with lat/lon + elevation support (no API key required)
 
 ## Scripts
 

@@ -17,7 +17,12 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, hasKey: Boolean(process.env.ANTHROPIC_API_KEY) });
+  res.json({
+    ok: true,
+    hasKey: Boolean(process.env.ANTHROPIC_API_KEY),
+    recordingMode: process.env.RECORDING_MODE === "true",
+    guardrailsEnabled: process.env.RECORDING_MODE !== "true",
+  });
 });
 
 app.post("/api/chat", async (req, res) => {
@@ -38,8 +43,12 @@ app.post("/api/chat", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
 
   try {
-    await streamChatResponse(apiKey, messages, (text) => {
-      res.write(`data: ${JSON.stringify({ text })}\n\n`);
+    await streamChatResponse(apiKey, messages, (event) => {
+      if (event.type === "status") {
+        res.write(`data: ${JSON.stringify({ status: event.status })}\n\n`);
+        return;
+      }
+      res.write(`data: ${JSON.stringify({ text: event.text })}\n\n`);
     });
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();

@@ -4,9 +4,16 @@ export type Message = {
   content: string;
 };
 
+export type { ReasoningStatus } from "../../lib/reasoning";
+
+export type StreamChatCallbacks = {
+  onText: (text: string) => void;
+  onStatus?: (status: import("../../lib/reasoning").ReasoningStatus) => void;
+};
+
 export async function streamChat(
   messages: Pick<Message, "role" | "content">[],
-  onChunk: (text: string) => void,
+  callbacks: StreamChatCallbacks,
   signal?: AbortSignal
 ): Promise<void> {
   const response = await fetch("/api/chat", {
@@ -39,11 +46,13 @@ export async function streamChat(
       if (!line.startsWith("data: ")) continue;
       const payload = JSON.parse(line.slice(6)) as {
         text?: string;
+        status?: import("../../lib/reasoning").ReasoningStatus;
         error?: string;
         done?: boolean;
       };
       if (payload.error) throw new Error(payload.error);
-      if (payload.text) onChunk(payload.text);
+      if (payload.status) callbacks.onStatus?.(payload.status);
+      if (payload.text) callbacks.onText(payload.text);
     }
   }
 }

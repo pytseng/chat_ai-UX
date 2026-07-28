@@ -27,8 +27,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await streamChatResponse(
       apiKey,
       messages as ChatMessage[],
-      (text) => {
-        res.write(`data: ${JSON.stringify({ text })}\n\n`);
+      (event) => {
+        if (event.type === "status") {
+          res.write(`data: ${JSON.stringify({ status: event.status })}\n\n`);
+          return;
+        }
+        res.write(`data: ${JSON.stringify({ text: event.text })}\n\n`);
       }
     );
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
