@@ -37,7 +37,9 @@ Tools (only for in-scope travel/packing questions):
   For mountains/hiking, pass elevation_m and/or coordinates when known. Never guess temperatures.
 - web_search: news, events, store hours, gear releases — NOT for weather.
 
-Be honest when you lack live product prices or stock. Keep replies short and scannable unless asked for detail.`;
+Be honest when you lack live product prices or stock. Keep replies short and scannable unless asked for detail.
+
+When listing gear to pack, use a short intro paragraph then bullet points (one item per line with a leading dash) so items can be shown as expandable product suggestions.`;
 
 /** Plain chat — no subject guardrails, no tools. Set RECORDING_MODE=true in .env.local */
 const RECORDING_SYSTEM_PROMPT = `You are a helpful assistant. Answer naturally and conversationally.`;

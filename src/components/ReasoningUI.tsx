@@ -1,39 +1,50 @@
-import type { ReasoningSegment } from "../../lib/reasoning";
-import { FluidDotsSpinner } from "./FluidDotsSpinner";
+import {
+  reasoningPillLabel,
+  type ReasoningStatus,
+} from "../../lib/reasoning";
 
 type ReasoningUIProps = {
-  segments: ReasoningSegment[];
-  stepKey: string;
+  steps: ReasoningStatus[];
 };
 
-function Segment({ segment }: { segment: ReasoningSegment }) {
-  if (segment.bold && segment.italic) {
-    return (
-      <strong>
-        <em>{segment.text}</em>
-      </strong>
-    );
-  }
-  if (segment.bold) return <strong>{segment.text}</strong>;
-  if (segment.italic) return <em>{segment.text}</em>;
-  return <>{segment.text}</>;
-}
+export function ReasoningUI({ steps }: ReasoningUIProps) {
+  if (steps.length === 0) return null;
 
-export function ReasoningUI({ segments, stepKey }: ReasoningUIProps) {
+  const activeLabel = reasoningPillLabel(steps[steps.length - 1]);
+
   return (
-    <div className="reasoning" role="status" aria-live="polite" aria-atomic="true">
-      <div className="reasoning__trail" aria-hidden>
-        <span className="reasoning__footstep reasoning__footstep--1" />
-        <span className="reasoning__footstep reasoning__footstep--2" />
-        <span className="reasoning__footstep reasoning__footstep--3" />
-        <span className="reasoning__leaf">🍃</span>
-      </div>
-      <p className="reasoning__text" key={stepKey}>
-        {segments.map((segment, index) => (
-          <Segment key={`${stepKey}-${index}`} segment={segment} />
-        ))}
-        <FluidDotsSpinner className="fluid-dots--reasoning" />
-      </p>
+    <div
+      className="reasoning-pills"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label={activeLabel}
+    >
+      {steps.map((step, index) => {
+        const isActive = index === steps.length - 1;
+        const isCompleted = index < steps.length - 1;
+
+        return (
+          <span key={step.id} className="reasoning-pills__item">
+            {index > 0 && (
+              <span className="reasoning-pills__arrow" aria-hidden>
+                →
+              </span>
+            )}
+            <span
+              className={[
+                "reasoning-pill",
+                isActive ? "reasoning-pill--active" : "",
+                isCompleted ? "reasoning-pill--completed" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {reasoningPillLabel(step)}
+            </span>
+          </span>
+        );
+      })}
     </div>
   );
 }

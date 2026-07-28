@@ -20,6 +20,26 @@ export function status(id: string, segments: ReasoningSegment[]): ReasoningStatu
   return { id, segments };
 }
 
+const PILL_LABELS: Record<string, string> = {
+  "reading-trip": "Reading question",
+  "matching-layers": "Matching layers",
+  "checking-weather": "Checking weather",
+  "scouting-web": "Searching web",
+  "packing-answer": "Packing answer",
+  clarifying: "Clarifying details",
+};
+
+export function reasoningPillLabel(status: ReasoningStatus): string {
+  return (
+    PILL_LABELS[status.id] ??
+    status.segments
+      .map((s) => s.text)
+      .join("")
+      .replace(/…$/, "")
+      .trim()
+  );
+}
+
 export const REASONING = {
   readingTrip: () =>
     status("reading-trip", [

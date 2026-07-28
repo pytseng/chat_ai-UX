@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import { streamChat, type Message, type ReasoningStatus } from "./api/chat";
 import { ChatInput, MessageList } from "./components/Chat";
+import { SavedStashPanel } from "./components/SavedStashPanel";
+import { useSavedProducts } from "./hooks/useSavedProducts";
 import "./App.css";
 
 function createId() {
@@ -12,8 +14,10 @@ export default function App() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [streamingId, setStreamingId] = useState<string | null>(null);
-  const [reasoning, setReasoning] = useState<ReasoningStatus | null>(null);
+  const [reasoningSteps, setReasoningSteps] = useState<ReasoningStatus[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [stashOpen, setStashOpen] = useState(false);
+  const { saved, count, remove } = useSavedProducts();
 
   const sendMessage = useCallback(
     async (textOverride?: string) => {
@@ -37,7 +41,7 @@ export default function App() {
       setMessages([...nextMessages, assistantMessage]);
       setInput("");
       setError(null);
-      setReasoning(null);
+      setReasoningSteps([]);
       setIsLoading(true);
       setStreamingId(assistantId);
 
@@ -45,9 +49,17 @@ export default function App() {
         await streamChat(
           [...nextMessages].map(({ role, content }) => ({ role, content })),
           {
-            onStatus: setReasoning,
+            onStatus: (status) => {
+              setReasoningSteps((prev) => {
+                const existing = prev.findIndex((s) => s.id === status.id);
+                if (existing >= 0) {
+                  return prev.map((s, i) => (i === existing ? status : s));
+                }
+                return [...prev, status];
+              });
+            },
             onText: (chunk) => {
-              setReasoning(null);
+              setReasoningSteps([]);
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === assistantId
@@ -66,7 +78,7 @@ export default function App() {
       } finally {
         setIsLoading(false);
         setStreamingId(null);
-        setReasoning(null);
+        setReasoningSteps([]);
       }
     },
     [input, isLoading, messages]
@@ -85,12 +97,20 @@ export default function App() {
       <div className="phone">
         <header className="header">
           <h1 className="header__title">SecretStash</h1>
+          <button
+            type="button"
+            className="header__stash-btn"
+            onClick={() => setStashOpen(true)}
+            aria-label={`Open saved stash, ${count} items`}
+          >
+            Stash{count > 0 ? ` · ${count}` : ""}
+          </button>
         </header>
 
         <MessageList
           messages={messages}
           streamingId={streamingId}
-          reasoning={reasoning}
+          reasoningSteps={reasoningSteps}
           error={error}
           onSuggestion={handleSuggestion}
           suggestionsDisabled={isLoading}
@@ -101,6 +121,13 @@ export default function App() {
           onChange={setInput}
           onSend={sendMessage}
           disabled={isLoading}
+        />
+
+        <SavedStashPanel
+          open={stashOpen}
+          items={saved}
+          onClose={() => setStashOpen(false)}
+          onRemove={remove}
         />
       </div>
     </div>

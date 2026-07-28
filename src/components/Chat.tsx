@@ -1,7 +1,9 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
+import { getSuggestionsFromContent } from "../../lib/suggestions";
 import type { Message, ReasoningStatus } from "../api/chat";
 import { ReasoningUI } from "./ReasoningUI";
 import { FluidDotsSpinner } from "./FluidDotsSpinner";
+import { SuggestionItems } from "./SuggestionItems";
 import {
   ArrowUpIcon,
   CodeIcon,
@@ -107,7 +109,7 @@ export function ChatInput({
 type MessageListProps = {
   messages: Message[];
   streamingId: string | null;
-  reasoning: ReasoningStatus | null;
+  reasoningSteps: ReasoningStatus[];
   error: string | null;
   onSuggestion?: (text: string) => void;
   suggestionsDisabled?: boolean;
@@ -116,7 +118,7 @@ type MessageListProps = {
 export function MessageList({
   messages,
   streamingId,
-  reasoning,
+  reasoningSteps,
   error,
   onSuggestion,
   suggestionsDisabled = false,
@@ -125,13 +127,13 @@ export function MessageList({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingId, reasoning, error]);
+  }, [messages, streamingId, reasoningSteps, error]);
 
   const streamingMessage = streamingId
     ? messages.find((m) => m.id === streamingId)
     : undefined;
   const showReasoning =
-    Boolean(reasoning) &&
+    reasoningSteps.length > 0 &&
     Boolean(streamingId) &&
     !streamingMessage?.content;
 
@@ -160,27 +162,51 @@ export function MessageList({
           )}
         </div>
       )}
-      {messages.map((msg) => (
-        <div key={msg.id}>
-          {msg.id === streamingId && showReasoning && reasoning && (
-            <ReasoningUI segments={reasoning.segments} stepKey={reasoning.id} />
-          )}
-          <div
-            className={[
-              "message",
-              msg.role === "user" ? "message--user" : "message--assistant",
-              msg.id === streamingId ? "message--streaming" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            {msg.content}
-            {msg.id === streamingId && !showReasoning && (
-              <FluidDotsSpinner className="fluid-dots--message" />
+      {messages.map((msg) => {
+        const isStreaming = msg.id === streamingId;
+        const assistantParsed =
+          msg.role === "assistant"
+            ? getSuggestionsFromContent(msg.content)
+            : null;
+        const showSuggestions =
+          assistantParsed &&
+          assistantParsed.suggestions.length > 0 &&
+          !isStreaming;
+
+        const showAssistantBubble =
+          msg.role === "user" ||
+          Boolean(assistantParsed?.prose) ||
+          (isStreaming && !showReasoning);
+
+        return (
+          <div key={msg.id} className="message-stack">
+            {isStreaming && showReasoning && (
+              <ReasoningUI steps={reasoningSteps} />
+            )}
+            {showAssistantBubble && (
+              <div
+                className={[
+                  "message",
+                  msg.role === "user" ? "message--user" : "message--assistant",
+                  isStreaming ? "message--streaming" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {msg.role === "user"
+                  ? msg.content
+                  : assistantParsed?.prose || msg.content}
+                {isStreaming && !showReasoning && (
+                  <FluidDotsSpinner className="fluid-dots--message" />
+                )}
+              </div>
+            )}
+            {showSuggestions && (
+              <SuggestionItems items={assistantParsed.suggestions} />
             )}
           </div>
-        </div>
-      ))}
+        );
+      })}
       {error && <div className="message message--error">{error}</div>}
       <div ref={bottomRef} />
     </div>

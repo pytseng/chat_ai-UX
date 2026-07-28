@@ -9,6 +9,7 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 import cors from "cors";
 import express from "express";
 import { streamChatResponse } from "../lib/chatHandler.js";
+import { searchProductImages } from "../lib/imageSearch.js";
 
 const app = express();
 const PORT = 3001;
@@ -23,6 +24,22 @@ app.get("/api/health", (_req, res) => {
     recordingMode: process.env.RECORDING_MODE === "true",
     guardrailsEnabled: process.env.RECORDING_MODE !== "true",
   });
+});
+
+app.get("/api/product-images", async (req, res) => {
+  const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
+  if (!query) {
+    res.status(400).json({ error: "q query parameter is required" });
+    return;
+  }
+
+  try {
+    const products = await searchProductImages(query, 4);
+    res.json({ products });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Image search failed";
+    res.status(500).json({ error: message });
+  }
 });
 
 app.post("/api/chat", async (req, res) => {
