@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { streamChat, type Message, type ReasoningStatus } from "./api/chat";
 import { ChatInput, MessageList } from "./components/Chat";
 import { SavedStashPanel } from "./components/SavedStashPanel";
@@ -9,7 +9,15 @@ function createId() {
   return crypto.randomUUID();
 }
 
+function isAbortError(err: unknown): boolean {
+  return (
+    (err instanceof Error && err.name === "AbortError") ||
+    (err instanceof DOMException && err.name === "AbortError")
+  );
+}
+
 export default function App() {
+  const abortRef = useRef<AbortController | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +53,10 @@ export default function App() {
       setIsLoading(true);
       setStreamingId(assistantId);
 
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       try {
         await streamChat(
           [...nextMessages].map(({ role, content }) => ({ role, content })),
@@ -68,14 +80,26 @@ export default function App() {
                 )
               );
             },
-          }
+          },
+          controller.signal
         );
       } catch (err) {
+        if (isAbortError(err)) {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === assistantId ? { ...m, stopped: true } : m
+            )
+          );
+          return;
+        }
         const message =
           err instanceof Error ? err.message : "Something went wrong";
         setError(message);
         setMessages((prev) => prev.filter((m) => m.id !== assistantId));
       } finally {
+        if (abortRef.current === controller) {
+          abortRef.current = null;
+        }
         setIsLoading(false);
         setStreamingId(null);
         setReasoningSteps([]);
@@ -83,6 +107,10 @@ export default function App() {
     },
     [input, isLoading, messages]
   );
+
+  const stopGeneration = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   const handleSuggestion = useCallback(
     (prompt: string) => {
@@ -120,7 +148,8 @@ export default function App() {
           value={input}
           onChange={setInput}
           onSend={sendMessage}
-          disabled={isLoading}
+          onStop={stopGeneration}
+          isGenerating={isLoading}
         />
 
         <SavedStashPanel

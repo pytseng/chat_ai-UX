@@ -9,6 +9,7 @@ import {
   CodeIcon,
   ImageIcon,
   MicIcon,
+  StopIcon,
 } from "./Icons";
 
 export const SUGGESTION_PROMPTS = [
@@ -21,17 +22,19 @@ type ChatInputProps = {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
-  disabled?: boolean;
+  onStop?: () => void;
+  isGenerating?: boolean;
 };
 
 export function ChatInput({
   value,
   onChange,
   onSend,
-  disabled = false,
+  onStop,
+  isGenerating = false,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const canSend = value.trim().length > 0 && !disabled;
+  const canSend = value.trim().length > 0 && !isGenerating;
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -58,7 +61,6 @@ export function ChatInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          disabled={disabled}
           aria-label="Message"
         />
         <div className="chat-box__toolbar">
@@ -91,18 +93,51 @@ export function ChatInput({
               <MicIcon />
             </button>
           </div>
-          <button
-            type="button"
-            className="send-btn"
-            onClick={onSend}
-            disabled={!canSend}
-            aria-label="Send message"
-          >
-            <ArrowUpIcon />
-          </button>
+          {isGenerating ? (
+            <button
+              type="button"
+              className="send-btn send-btn--stop"
+              onClick={onStop}
+              aria-label="Stop generating"
+            >
+              <StopIcon />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="send-btn"
+              onClick={onSend}
+              disabled={!canSend}
+              aria-label="Send message"
+            >
+              <ArrowUpIcon />
+            </button>
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+function StoppedNotice({ variant }: { variant: "early" | "partial" }) {
+  if (variant === "early") {
+    return (
+      <p className="message__stopped message__stopped--solo">
+        <span className="message__stopped-mark" aria-hidden>
+          ···
+        </span>
+        Got it — I'll hold here. Ask whenever you're ready.
+      </p>
+    );
+  }
+
+  return (
+    <p className="message__stopped">
+      <span className="message__stopped-mark" aria-hidden>
+        ···
+      </span>
+      I'll pause here — just say the word if you want me to keep going.
+    </p>
   );
 }
 
@@ -176,7 +211,17 @@ export function MessageList({
         const showAssistantBubble =
           msg.role === "user" ||
           Boolean(assistantParsed?.prose) ||
+          Boolean(msg.content) ||
+          msg.stopped ||
           (isStreaming && !showReasoning);
+
+        const stoppedWithContent =
+          msg.role === "assistant" &&
+          msg.stopped &&
+          Boolean(assistantParsed?.prose || msg.content.trim());
+
+        const stoppedEarly =
+          msg.role === "assistant" && msg.stopped && !msg.content.trim();
 
         return (
           <div key={msg.id} className="message-stack">
@@ -189,15 +234,25 @@ export function MessageList({
                   "message",
                   msg.role === "user" ? "message--user" : "message--assistant",
                   isStreaming ? "message--streaming" : "",
+                  msg.stopped ? "message--stopped" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
               >
-                {msg.role === "user"
-                  ? msg.content
-                  : assistantParsed?.prose || msg.content}
-                {isStreaming && !showReasoning && (
-                  <FluidDotsSpinner className="fluid-dots--message" />
+                {msg.role === "user" ? (
+                  msg.content
+                ) : stoppedEarly ? (
+                  <StoppedNotice variant="early" />
+                ) : (
+                  <>
+                    {assistantParsed?.prose || msg.content}
+                    {isStreaming && !showReasoning && (
+                      <FluidDotsSpinner className="fluid-dots--message" />
+                    )}
+                    {stoppedWithContent && !isStreaming && (
+                      <StoppedNotice variant="partial" />
+                    )}
+                  </>
                 )}
               </div>
             )}

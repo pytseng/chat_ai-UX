@@ -133,6 +133,39 @@
   gap: 2px;
 }
 
+.message--stopped.message--assistant {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.message__stopped {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed #d8dfd9;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #6b7f6e;
+  font-style: italic;
+}
+
+.message__stopped--solo {
+  margin: 0;
+  padding-top: 0;
+  border-top: none;
+  font-style: normal;
+  color: #5a6b5d;
+}
+
+.message__stopped-mark {
+  display: inline-block;
+  margin-right: 6px;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  color: #8aa08e;
+  opacity: 0.85;
+}
+
 .fluid-dots {
   display: inline-flex;
   align-items: flex-end;
@@ -804,6 +837,14 @@
 
 .send-btn:not(:disabled):hover {
   background: #1e1e1e;
+}
+
+.send-btn--stop {
+  background: #4f6b54;
+}
+
+.send-btn--stop:hover {
+  background: #3d5342;
 }
 
 .send-btn svg {

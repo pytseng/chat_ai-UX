@@ -2,6 +2,7 @@ export type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  stopped?: boolean;
 };
 
 export type { ReasoningStatus } from "../../lib/reasoning";
@@ -35,6 +36,11 @@ export async function streamChat(
   let buffer = "";
 
   while (true) {
+    if (signal?.aborted) {
+      await reader.cancel();
+      break;
+    }
+
     const { done, value } = await reader.read();
     if (done) break;
 

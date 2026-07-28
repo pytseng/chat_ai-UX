@@ -131,6 +131,14 @@ export function UndoIcon({ className }: IconProps) {
   );
 }
 
+export function StopIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function CloseIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
