@@ -1,7 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import { streamChat, type Message, type ReasoningStatus } from "./api/chat";
+import { ChatHistoryDrawer } from "./components/ChatHistoryDrawer";
 import { ChatInput, MessageList } from "./components/Chat";
+import { LiquidBackground } from "./components/LiquidBackground";
+import { MenuIcon } from "./components/Icons";
 import { SavedStashPanel } from "./components/SavedStashPanel";
+import { useChatHistory } from "./hooks/useChatHistory";
 import { useSavedProducts } from "./hooks/useSavedProducts";
 import "./App.css";
 
@@ -18,13 +22,22 @@ function isAbortError(err: unknown): boolean {
 
 export default function App() {
   const abortRef = useRef<AbortController | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const {
+    threads,
+    activeId,
+    messages,
+    setMessages,
+    startNewChat,
+    openChat,
+    deleteChat,
+  } = useChatHistory();
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [reasoningSteps, setReasoningSteps] = useState<ReasoningStatus[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [stashOpen, setStashOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { saved, count, remove } = useSavedProducts();
 
   const sendMessage = useCallback(
@@ -105,7 +118,7 @@ export default function App() {
         setReasoningSteps([]);
       }
     },
-    [input, isLoading, messages]
+    [input, isLoading, messages, setMessages]
   );
 
   const stopGeneration = useCallback(() => {
@@ -120,16 +133,46 @@ export default function App() {
     [sendMessage]
   );
 
+  const handleNewChat = useCallback(() => {
+    abortRef.current?.abort();
+    setInput("");
+    setError(null);
+    setReasoningSteps([]);
+    setStreamingId(null);
+    setIsLoading(false);
+    startNewChat();
+  }, [startNewChat]);
+
+  const handleOpenChat = useCallback(
+    (id: string) => {
+      if (id === activeId) return;
+      abortRef.current?.abort();
+      setInput("");
+      setError(null);
+      setReasoningSteps([]);
+      setStreamingId(null);
+      setIsLoading(false);
+      openChat(id);
+    },
+    [activeId, openChat]
+  );
+
   return (
     <div className="app">
-      <div className="app__ambient" aria-hidden>
-        <div className="app__glow app__glow--silver" />
-        <div className="app__glow app__glow--emerald" />
-        <div className="app__glow app__glow--vault" />
-      </div>
       <div className="phone">
+        <LiquidBackground className="liquid-bg--phone" />
         <header className="header">
-          <h1 className="header__title">SecretStash</h1>
+          <div className="header__leading">
+            <button
+              type="button"
+              className="header__menu-btn"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open chat history"
+            >
+              <MenuIcon />
+            </button>
+            <h1 className="header__title">SecretStash</h1>
+          </div>
           <button
             type="button"
             className="header__stash-btn"
@@ -162,6 +205,16 @@ export default function App() {
           items={saved}
           onClose={() => setStashOpen(false)}
           onRemove={remove}
+        />
+
+        <ChatHistoryDrawer
+          open={drawerOpen}
+          threads={threads}
+          activeId={activeId}
+          onClose={() => setDrawerOpen(false)}
+          onNewChat={handleNewChat}
+          onOpenChat={handleOpenChat}
+          onDeleteChat={deleteChat}
         />
       </div>
     </div>

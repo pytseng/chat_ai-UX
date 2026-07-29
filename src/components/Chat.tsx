@@ -56,7 +56,7 @@ export function ChatInput({
         <textarea
           ref={textareaRef}
           className="chat-box__field"
-          placeholder="e.g. What to pack for hiking in Patagonia?"
+          placeholder="What would you like to know?"
           rows={1}
           value={value}
           onChange={(e) => onChange(e.target.value)}
