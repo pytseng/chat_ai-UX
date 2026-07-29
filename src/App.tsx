@@ -122,6 +122,11 @@ export default function App() {
 
   return (
     <div className="app">
+      <div className="app__ambient" aria-hidden>
+        <div className="app__glow app__glow--silver" />
+        <div className="app__glow app__glow--emerald" />
+        <div className="app__glow app__glow--vault" />
+      </div>
       <div className="phone">
         <header className="header">
           <h1 className="header__title">SecretStash</h1>
