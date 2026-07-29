@@ -25,7 +25,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
-.phone > :not(.liquid-bg) {
+.phone > :not(.liquid-bg):not(.chat-drawer):not(.stash-panel) {
   position: relative;
   z-index: 2;
 }
@@ -836,22 +836,24 @@
   }
 }
 
-/* ── Chat history drawer ── */
+/* ── Chat history drawer (full cover, L→R like Gemini) ── */
 
 .chat-drawer {
   position: fixed;
   inset: 0;
-  z-index: 25;
+  z-index: 40;
   display: flex;
   justify-content: center;
+  overflow: hidden;
 }
 
 .chat-drawer__backdrop {
   position: absolute;
   inset: 0;
   border: none;
-  background: rgba(26, 35, 50, 0.4);
+  background: rgba(26, 35, 50, 0.35);
   cursor: pointer;
+  animation: chat-drawer-fade 0.28s ease-out;
 }
 
 .chat-drawer__frame {
@@ -861,35 +863,40 @@
   max-width: 430px;
   height: 100%;
   pointer-events: none;
+  overflow: hidden;
 }
 
 .chat-drawer__panel {
   pointer-events: auto;
-  width: min(300px, 86%);
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: calc(14px + env(safe-area-inset-top, 0px)) 14px
+  gap: 14px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 18px
     calc(18px + env(safe-area-inset-bottom, 0px));
-  background: var(--glass-fill-strong);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-right: 1px solid var(--glass-border);
-  box-shadow:
-    8px 0 40px rgba(51, 51, 51, 0.1),
-    var(--glass-highlight);
-  animation: chat-drawer-in 0.28s ease-out;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(28px) saturate(1.35);
+  -webkit-backdrop-filter: blur(28px) saturate(1.35);
+  box-shadow: none;
+  animation: chat-drawer-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes chat-drawer-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes chat-drawer-in {
   from {
     transform: translateX(-100%);
-    opacity: 0.85;
   }
   to {
     transform: translateX(0);
-    opacity: 1;
   }
 }
 
@@ -898,12 +905,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding-bottom: 2px;
 }
 
 .chat-drawer__title {
   margin: 0;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
+  letter-spacing: -0.3px;
   color: var(--emerald-jewel);
 }
 
