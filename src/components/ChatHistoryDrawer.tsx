@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { CloseIcon, PlusIcon } from "./Icons";
 import {
   formatChatTime,
@@ -23,11 +24,27 @@ export function ChatHistoryDrawer({
   onOpenChat,
   onDeleteChat,
 }: ChatHistoryDrawerProps) {
-  if (!open) return null;
+  const [rendered, setRendered] = useState(open);
+  const [closing, setClosing] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setRendered(true);
+      setClosing(false);
+      return;
+    }
+    if (rendered) {
+      setClosing(true);
+    }
+  }, [open, rendered]);
+
+  if (!rendered) return null;
 
   return (
     <div
-      className="chat-drawer"
+      className={["chat-drawer", closing ? "chat-drawer--closing" : ""]
+        .filter(Boolean)
+        .join(" ")}
       role="dialog"
       aria-modal="true"
       aria-label="Chat history"
@@ -37,9 +54,19 @@ export function ChatHistoryDrawer({
         className="chat-drawer__backdrop"
         aria-label="Close chat history"
         onClick={onClose}
+        disabled={closing}
       />
       <div className="chat-drawer__frame">
-        <aside className="chat-drawer__panel">
+        <aside
+          className="chat-drawer__panel"
+          onAnimationEnd={(event) => {
+            if (!closing) return;
+            if (event.target !== event.currentTarget) return;
+            if (!event.animationName.includes("chat-drawer-out")) return;
+            setRendered(false);
+            setClosing(false);
+          }}
+        >
           <div className="chat-drawer__header">
             <h2 className="chat-drawer__title">Chats</h2>
             <button
@@ -47,6 +74,7 @@ export function ChatHistoryDrawer({
               className="chat-drawer__close"
               onClick={onClose}
               aria-label="Close"
+              disabled={closing}
             >
               <CloseIcon />
             </button>
@@ -59,6 +87,7 @@ export function ChatHistoryDrawer({
               onNewChat();
               onClose();
             }}
+            disabled={closing}
           >
             <PlusIcon />
             New chat
@@ -89,6 +118,7 @@ export function ChatHistoryDrawer({
                           onOpenChat(thread.id);
                           onClose();
                         }}
+                        disabled={closing}
                       >
                         <span className="chat-drawer__item-title">
                           {thread.title}
@@ -102,6 +132,7 @@ export function ChatHistoryDrawer({
                         className="chat-drawer__item-delete"
                         onClick={() => onDeleteChat(thread.id)}
                         aria-label={`Delete chat ${thread.title}`}
+                        disabled={closing}
                       >
                         <CloseIcon />
                       </button>

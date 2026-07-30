@@ -37,8 +37,8 @@ type CategoryIcon = ComponentType<{ className?: string }>;
 
 const CATEGORY_ICONS: Record<SuggestionCategoryId, CategoryIcon> = {
   top: ({ className }) => <Shirt className={className} strokeWidth={1.75} aria-hidden />,
-  bottom: PantsIcon,
-  accessories: GlovesIcon,
+  bottom: ({ className }) => <PantsIcon className={className} />,
+  accessories: ({ className }) => <GlovesIcon className={className} />,
   gear: ({ className }) => <Backpack className={className} strokeWidth={1.75} aria-hidden />,
   other: ({ className }) => <Backpack className={className} strokeWidth={1.75} aria-hidden />,
 };
@@ -168,7 +168,15 @@ export function SuggestionItems({
                   <ChevronDown className="pack-section__chevron" aria-hidden size={18} strokeWidth={1.75} />
                 </button>
 
-                {isOpen && (
+                <div
+                  className={[
+                    "pack-section__body",
+                    isOpen ? "pack-section__body--open" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  aria-hidden={!isOpen}
+                >
                   <ul className="pack-suggestions__list">
                     {section.items.map((item) => (
                       <SuggestionRow
@@ -191,7 +199,7 @@ export function SuggestionItems({
                       />
                     ))}
                   </ul>
-                )}
+                </div>
               </section>
             );
           })}
@@ -273,6 +281,11 @@ function SuggestionRow({
   isSaved,
 }: SuggestionRowProps) {
   const products = state?.products ?? [];
+  const [openedOnce, setOpenedOnce] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) setOpenedOnce(true);
+  }, [isOpen]);
 
   return (
     <li className="pack-suggestions__item">
@@ -304,16 +317,28 @@ function SuggestionRow({
         </button>
       </div>
 
-      {isOpen && (
-        <SuggestionProducts
-          loading={Boolean(state?.loading)}
-          error={state?.error ?? null}
-          products={products}
-          onRetry={onRetry}
-          onSave={onSave}
-          isSaved={isSaved}
-        />
-      )}
+      <div
+        className={[
+          "pack-suggestions__detail",
+          isOpen ? "pack-suggestions__detail--open" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        aria-hidden={!isOpen}
+      >
+        <div className="pack-suggestions__detail-inner">
+          {openedOnce ? (
+            <SuggestionProducts
+              loading={Boolean(state?.loading)}
+              error={state?.error ?? null}
+              products={products}
+              onRetry={onRetry}
+              onSave={onSave}
+              isSaved={isSaved}
+            />
+          ) : null}
+        </div>
+      </div>
     </li>
   );
 }

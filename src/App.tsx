@@ -3,7 +3,7 @@ import { streamChat, type Message, type ReasoningStatus } from "./api/chat";
 import { ChatHistoryDrawer } from "./components/ChatHistoryDrawer";
 import { ChatInput, MessageList } from "./components/Chat";
 import { LiquidBackground } from "./components/LiquidBackground";
-import { MenuIcon } from "./components/Icons";
+import { MenuIcon, ChestIcon } from "./components/Icons";
 import { SavedStashPanel } from "./components/SavedStashPanel";
 import { useChatHistory } from "./hooks/useChatHistory";
 import { useSavedProducts } from "./hooks/useSavedProducts";
@@ -249,9 +249,16 @@ export default function App() {
             type="button"
             className="header__stash-btn"
             onClick={() => setStashOpen(true)}
-            aria-label={`Open saved stash, ${count} items`}
+            aria-label={
+              count > 0
+                ? `Open saved stash, ${count} items`
+                : "Open saved stash"
+            }
           >
-            Stash{count > 0 ? ` · ${count}` : ""}
+            <ChestIcon />
+            {count > 0 ? (
+              <span className="header__stash-badge">{count > 99 ? "99+" : count}</span>
+            ) : null}
           </button>
         </header>
 

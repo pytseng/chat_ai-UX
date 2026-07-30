@@ -64,7 +64,19 @@ export function matchCategoryId(heading: string): SuggestionCategoryId | null {
     key === "tops" ||
     key === "upper" ||
     key === "upper layer" ||
+    key === "base layer" ||
+    key === "base layers" ||
+    key === "mid layer" ||
+    key === "mid layers" ||
+    key === "midlayer" ||
+    key === "outer layer" ||
+    key === "outerwear" ||
+    key === "jackets" ||
+    key === "layers" ||
     key.includes("top layer") ||
+    key.includes("base layer") ||
+    key.includes("mid layer") ||
+    key.includes("outer layer") ||
     key.startsWith("top ")
   ) {
     return "top";
@@ -75,6 +87,8 @@ export function matchCategoryId(heading: string): SuggestionCategoryId | null {
     key === "bottoms" ||
     key === "lower" ||
     key === "lower layer" ||
+    key === "pants" ||
+    key === "trousers" ||
     key.includes("bottom layer") ||
     key.startsWith("bottom ")
   ) {
@@ -97,6 +111,65 @@ export function matchCategoryId(heading: string): SuggestionCategoryId | null {
     return "gear";
   }
   return null;
+}
+
+/**
+ * Infer category from product title when heading is missing/unknown.
+ * Prefer specific matches (bottom/accessories/gear) before broad "top" words.
+ */
+export function inferCategoryFromTitle(
+  title: string
+): SuggestionCategoryId | null {
+  const t = title.toLowerCase();
+
+  if (
+    /\b(legging|leggings|bottoms?|pants?|trousers?|shorts?|skirt|skirts|chinos?|jeans?)\b/.test(
+      t
+    )
+  ) {
+    return "bottom";
+  }
+
+  if (
+    /\b(gloves?|mittens?|hat|hats|beanie|scarves|scarf|buff|gaiter|socks?|sunglasses?|watch|watches|belt|belts|balaclava|earmuffs?|necklace|jewelry)\b/.test(
+      t
+    )
+  ) {
+    return "accessories";
+  }
+
+  if (
+    /\b(backpack|daypack|pack\b|rucksack|tent|stove|bottle|hydration|poles?|headlamp|flashlight|sleeping|trekking|duffel|luggage|suitcase|crampons?|gaiters)\b/.test(
+      t
+    )
+  ) {
+    return "gear";
+  }
+
+  if (
+    /\b(jacket|jackets|fleece|hoodie|sweater|shirt|shirts|tee\b|t-shirt|tops?|vest|shell|down\b|mid-?layer|base.?layer|long-?sleeve|pullover|parka|coat|anorak|windbreaker|insulated|midweight)\b/.test(
+      t
+    )
+  ) {
+    return "top";
+  }
+
+  return null;
+}
+
+function resolveItemCategory(
+  title: string,
+  headingCategory: SuggestionCategoryId
+): { id: SuggestionCategoryId; label: string } {
+  // Title keywords win — AI often dumps mixed items under one heading
+  const inferred = inferCategoryFromTitle(title);
+  if (inferred) {
+    return { id: inferred, label: CATEGORY_LABELS[inferred] };
+  }
+  if (headingCategory !== "other") {
+    return { id: headingCategory, label: CATEGORY_LABELS[headingCategory] };
+  }
+  return { id: "other", label: CATEGORY_LABELS.other };
 }
 
 export function categoryLabelFor(
@@ -136,7 +209,6 @@ export function splitAssistantContent(content: string): {
   const proseLines: string[] = [];
   let inList = false;
   let currentCategoryId: SuggestionCategoryId = "other";
-  let currentCategoryLabel = CATEGORY_LABELS.other;
   let itemIndex = 0;
 
   for (const line of lines) {
@@ -145,11 +217,12 @@ export function splitAssistantContent(content: string): {
       inList = true;
       const title = cleanItem(bullet[1]);
       if (title) {
+        const resolved = resolveItemCategory(title, currentCategoryId);
         suggestions.push({
           id: `item-${itemIndex}-${slugify(title)}`,
           title,
-          categoryId: currentCategoryId,
-          categoryLabel: currentCategoryLabel,
+          categoryId: resolved.id,
+          categoryLabel: resolved.label,
         });
         itemIndex += 1;
       }
@@ -161,10 +234,6 @@ export function splitAssistantContent(content: string): {
       inList = true;
       const matched = matchCategoryId(heading);
       currentCategoryId = matched ?? "other";
-      currentCategoryLabel =
-        matched != null
-          ? CATEGORY_LABELS[matched]
-          : heading;
       continue;
     }
 
@@ -190,19 +259,20 @@ export function groupSuggestionsByCategory(
   suggestions: PackSuggestion[]
 ): SuggestionCategory[] {
   const buckets = new Map<SuggestionCategoryId, PackSuggestion[]>();
-  const otherLabels = new Map<string, PackSuggestion[]>();
 
   for (const item of suggestions) {
-    if (item.categoryId === "other") {
-      const label = item.categoryLabel || CATEGORY_LABELS.other;
-      const list = otherLabels.get(label) ?? [];
-      list.push(item);
-      otherLabels.set(label, list);
-      continue;
-    }
-    const list = buckets.get(item.categoryId) ?? [];
-    list.push(item);
-    buckets.set(item.categoryId, list);
+    const inferred = inferCategoryFromTitle(item.title);
+    const id =
+      inferred ?? (item.categoryId !== "other" ? item.categoryId : null);
+    if (!id || id === "other") continue;
+
+    const list = buckets.get(id) ?? [];
+    list.push({
+      ...item,
+      categoryId: id,
+      categoryLabel: CATEGORY_LABELS[id],
+    });
+    buckets.set(id, list);
   }
 
   const groups: SuggestionCategory[] = [];
@@ -212,12 +282,6 @@ export function groupSuggestionsByCategory(
     const items = buckets.get(id);
     if (items?.length) {
       groups.push({ id, label: CATEGORY_LABELS[id], items });
-    }
-  }
-
-  for (const [label, items] of otherLabels) {
-    if (items.length) {
-      groups.push({ id: "other", label, items });
     }
   }
 

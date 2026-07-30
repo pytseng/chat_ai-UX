@@ -165,42 +165,108 @@ export function MenuIcon({ className }: IconProps) {
   );
 }
 
-/** Minimal Lucide-style pair of pants */
-export function PantsIcon({ className }: IconProps) {
+/**
+ * Lucide Lab chest — stroke style for Stash.
+ * https://lucide.dev/icons/lab/chest
+ */
+export function ChestIcon({ className }: IconProps) {
   return (
     <svg
       className={className}
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M7 3h10l1.2 8.5L19 21h-4.2l-.8-9.5h-.9L12.3 21H8.1L9 11.5 7 3z" />
-      <path d="M12.05 3v8.5" />
+      <path
+        d="M8 19a2 2 0 0 0 2-2V9a4 4 0 0 0-8 0v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a4 4 0 0 0-4-4H6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M2 11h20"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16 11v3"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-/** Minimal Lucide-style gloves */
+/**
+ * Iconoir pants — exact path, stroke 1.5 on 24×24 grid.
+ * https://iconoir.com
+ */
+export function PantsIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 19H16.4363C16.7532 19 17.0154 18.7536 17.0352 18.4374L17.9602 3.63743C17.9817 3.29201 17.7074 3 17.3613 3H6.63426C6.28981 3 6.01608 3.28936 6.03518 3.63328L6.96852 20.4333C6.98618 20.7512 7.24915 21 7.56759 21H11.4C11.7314 21 12 20.7314 12 20.4V8"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Iconoir boxing-glove — exact paths, stroke 1.5 on 24×24 grid.
+ * https://iconoir.com
+ */
 export function GlovesIcon({ className }: IconProps) {
   return (
     <svg
       className={className}
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       aria-hidden
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M7.5 13.5V8a1.5 1.5 0 013 0v3.5" />
-      <path d="M10.5 11.5V7a1.5 1.5 0 013 0v4.5" />
-      <path d="M13.5 11.5V8a1.5 1.5 0 013 0v6.5a3.5 3.5 0 01-3.5 3.5h-1.2A3.3 3.3 0 019 14.7v-1.2" />
-      <path d="M7.5 13.5H6A1.5 1.5 0 014.5 12v0A1.5 1.5 0 016 10.5h1.5" />
+      <path
+        d="M8.48901 17.7273H18.3556M8.48901 17.7273V21H18.3556V17.7273M8.48901 17.7273C5.20016 15.5455 3.55573 10.0909 4.10387 8.45455C4.54239 7.14545 6.47916 7.54545 7.39273 7.90909C7.39273 4.09091 9.03715 3 13.4223 3C17.8074 3 20 4.09091 20 9.54545C20 13.9091 18.9037 16.8182 18.3556 17.7273"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.39282 7.90909C7.75825 8.27272 8.81799 9 10.1335 9C11.4491 9 13.9705 9 15.0668 9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.39282 7.90909C7.39282 11.7273 9.03725 12.2727 10.1335 12.2727"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

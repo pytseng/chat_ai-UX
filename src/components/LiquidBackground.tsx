@@ -14,8 +14,8 @@ void main() {
 `;
 
 /*
- * Very soft calm holo liquid — no folds/contours.
- * One organic glow source slowly morphs under the center.
+ * Soft pearl-silver holo liquid — matches the calm bright look
+ * (center glow, faint mint/lavender accents, no dark gray blobs).
  */
 const FRAGMENT_SHADER = `#version 300 es
 precision highp float;
@@ -63,7 +63,7 @@ float softNoise(vec2 p) {
 }
 
 vec3 sampleSoft(sampler2D tex, vec2 uv, vec2 px) {
-  /* Wide soft blur — erases any residual contour */
+  /* Wide soft blur — erases residual contour / dark folds */
   return
     texture(tex, uv).rgb * 0.28 +
     texture(tex, uv + vec2(px.x, 0.0)).rgb * 0.12 +
@@ -97,60 +97,81 @@ void main() {
   vec2 fromCenter = (uv - center) * vec2(1.05, 0.88);
   float dist = length(fromCenter);
 
-  /*
-   * Compact core glow with more obvious organic morph.
-   */
   float angle = atan(fromCenter.y, fromCenter.x);
-  float morph = softNoise(fromCenter * 1.6 + t * 0.22);
+  float morph = softNoise(fromCenter * 1.55 + t * 0.3);
   float shapeWobble =
-    0.55 * softNoise(vec2(cos(angle), sin(angle)) * 1.0 + t * 0.28) +
-    0.45 * softNoise(fromCenter * 2.1 - t * 0.18);
-  float breath = 0.5 + 0.5 * sin(t * 0.7);
+    0.55 * softNoise(vec2(cos(angle), sin(angle)) * 1.1 + t * 0.36) +
+    0.45 * softNoise(fromCenter * 2.15 - t * 0.24);
+  float breath = 0.5 + 0.5 * sin(t * 0.85);
 
-  /* Organic radius — clearer shape change over time */
-  float glowRadius = 0.15 + 0.08 * shapeWobble + 0.035 * breath;
+  /* Single center glow — morph stays in the middle only */
+  float glowRadius = 0.12 + 0.075 * shapeWobble + 0.03 * breath;
   float core = smoothstep(glowRadius, 0.0, dist);
-  float coreSoft = smoothstep(glowRadius * 1.85, glowRadius * 0.08, dist);
+  float coreSoft = smoothstep(glowRadius * 1.8, glowRadius * 0.08, dist);
 
-  /* Stronger center warp + soft field drift so motion reads clearly */
   vec2 radial = fromCenter / max(dist, 1e-3);
   vec2 tangential = vec2(-radial.y, radial.x);
-  float warpAmt = coreSoft * (0.08 + 0.045 * breath);
+  /* Warp only inside the glow so corners stay calm silver */
+  float warpAmt = coreSoft * (0.09 + 0.05 * breath);
   vec2 warp =
     radial * morph * warpAmt +
-    tangential * shapeWobble * warpAmt * 0.95;
+    tangential * shapeWobble * warpAmt * 1.05;
 
-  /* Gentle whole-field liquid drift (still calm, but noticeable) */
-  float fieldDrift = softNoise(uv * 0.7 + t * 0.12);
+  float fieldDrift = softNoise(fromCenter * 1.2 + t * 0.14);
   warp += vec2(
-    softNoise(uv * 0.55 + t * 0.1),
-    softNoise(uv * 0.55 - t * 0.08 + 2.1)
-  ) * 0.018;
+    softNoise(fromCenter * 1.4 + t * 0.12),
+    softNoise(fromCenter * 1.4 - t * 0.1 + 2.1)
+  ) * (0.016 * coreSoft);
 
-  float zoom = 1.0 - core * (0.05 + 0.035 * breath) - fieldDrift * 0.012;
+  float zoom = 1.0 - core * (0.05 + 0.035 * breath);
   vec2 sampleUv = clamp(center + (cover - center) * zoom + warp, 0.01, 0.99);
 
   vec2 px = 2.8 / u_resolution;
   vec3 color = sampleSoft(u_liquid, sampleUv, px);
 
-  /* Slightly more contrast — less pearl flattening */
-  vec3 pearl = vec3(0.95, 0.96, 0.97);
-  color = mix(color, pearl, 0.08);
-  color = (color - 0.5) * 1.12 + 0.5;
+  /* Strip baked texture pink/magenta */
+  float pinkAmt = max(0.0, color.r - color.g) + max(0.0, color.b - color.g) * 0.55;
+  pinkAmt = clamp(pinkAmt * 2.6, 0.0, 1.0);
+  float gray = dot(color, vec3(0.299, 0.587, 0.114));
+  color = mix(color, vec3(gray), pinkAmt * 0.75);
+  color.r = mix(color.r, color.g, pinkAmt * 0.85);
+  color.b = mix(color.b, mix(color.g, 0.78, 0.35), pinkAmt * 0.7);
 
-  /* Compact soft glow under center — warm + emerald scent */
-  float glow = core * (0.55 + 0.45 * breath + morph * 0.25);
-  color += vec3(1.0, 0.98, 0.92) * glow * 0.22;
-  color += vec3(0.05, 0.66, 0.36) * glow * 0.07;
+  /* Calm silver field — cream only as a very light overall bias */
+  vec3 cream = vec3(0.980, 0.980, 0.776); /* #FAFAC6 */
+  vec3 emerald = vec3(0.06, 0.66, 0.40);
+  vec3 silver = vec3(0.88, 0.90, 0.91);
+  vec3 pearl = vec3(0.95, 0.96, 0.94);
 
-  /* Soft hue refraction — a bit more present, still calm */
-  float hue = 0.5 + 0.5 * softNoise(uv * 0.85 + t * 0.06);
-  vec3 emerald = vec3(0.05, 0.66, 0.36);
-  vec3 pink = vec3(1.0, 0.62, 0.68);
-  vec3 lavender = vec3(0.72, 0.68, 0.92);
-  vec3 softHolo = mix(emerald, pink, smoothstep(0.2, 0.75, hue));
-  softHolo = mix(softHolo, lavender, 0.28 * smoothstep(0.55, 1.0, hue));
-  color += softHolo * (0.035 + core * 0.05 + abs(fieldDrift) * 0.02);
+  color = mix(color, silver, 0.18);
+  color = mix(color, cream * 0.5 + silver * 0.5, 0.06);
+  color = (color - 0.5) * 1.06 + 0.5;
+
+  /*
+   * All cream + emerald light lives in the center glow only.
+   * Morphing shape (breath + shapeWobble) drives the look.
+   */
+  float huePulse = 0.5 + 0.5 * softNoise(fromCenter * 1.8 + t * 0.2);
+  vec3 centerTint = mix(cream, mix(cream, emerald, 0.38), huePulse * 0.7);
+  float glow = core * (0.55 + 0.45 * breath + morph * 0.4);
+
+  color += mix(pearl, cream, 0.78) * glow * 0.42;
+  color += centerTint * glow * 0.22;
+  color += cream * coreSoft * (0.12 + 0.08 * breath);
+  color += cream * core * (0.08 + 0.05 * breath);
+  color += emerald * core * (0.04 + 0.03 * breath);
+
+  float edge = abs(morph) * coreSoft;
+  color += mix(cream, emerald, breath * 0.55) * edge * 0.12;
+
+  float remPink = max(0.0, color.r - max(color.g, color.b * 0.92));
+  color.r -= remPink * 0.85;
+
+  /* Lift the top band so brand type stays clear on pearl */
+  float topLift = smoothstep(0.42, 0.0, uv.y);
+  color = mix(color, pearl, topLift * 0.42);
+  color += vec3(0.07, 0.07, 0.065) * topLift;
+  color = mix(color, color * vec3(0.96, 1.0, 0.98), topLift * 0.15);
 
   fragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
 }
@@ -211,7 +232,12 @@ function loadTexture(
       return;
     }
 
+    /* Bright pearl placeholder — matches final look until image loads */
     gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
@@ -221,7 +247,7 @@ function loadTexture(
       0,
       gl.RGBA,
       gl.UNSIGNED_BYTE,
-      new Uint8Array([240, 242, 242, 255])
+      new Uint8Array([242, 244, 245, 255])
     );
 
     const image = new Image();
@@ -229,24 +255,22 @@ function loadTexture(
       gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       resolve(texture);
     };
-    image.onerror = () => resolve(null);
+    image.onerror = () => resolve(texture);
     image.src = url;
   });
 }
 
 export function LiquidBackground({ className }: LiquidBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const wrap = wrapRef.current;
+    if (!canvas || !wrap) return;
 
     let disposed = false;
     const gl = canvas.getContext("webgl2", {
@@ -254,9 +278,11 @@ export function LiquidBackground({ className }: LiquidBackgroundProps) {
       antialias: true,
       depth: false,
       stencil: false,
-      preserveDrawingBuffer: false,
+      preserveDrawingBuffer: true,
     });
     if (!gl) return;
+
+    gl.clearColor(0.92, 0.92, 0.86, 1);
 
     const program = createProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
     if (!program) return;
@@ -283,22 +309,9 @@ export function LiquidBackground({ className }: LiquidBackgroundProps) {
     let frozenTime = 0;
     let texture: WebGLTexture | null = null;
 
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const { clientWidth, clientHeight } = canvas;
-      if (clientWidth === 0 || clientHeight === 0) return;
-
-      canvas.width = Math.floor(clientWidth * dpr);
-      canvas.height = Math.floor(clientHeight * dpr);
-      gl.viewport(0, 0, canvas.width, canvas.height);
-    };
-
-    const render = (now: number) => {
-      if (disposed) return;
+    const drawFrame = (now: number) => {
       const elapsed = (now - start) / 1000;
-      if (animate) {
-        frozenTime = elapsed;
-      }
+      if (animate) frozenTime = elapsed;
 
       gl.useProgram(program);
       gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -308,18 +321,39 @@ export function LiquidBackground({ className }: LiquidBackgroundProps) {
       gl.activeTexture(gl.TEXTURE0);
       if (texture) gl.bindTexture(gl.TEXTURE_2D, texture);
       gl.uniform1i(liquidLoc, 0);
-      gl.uniform2f(resLoc, canvas.width, canvas.height);
+      gl.uniform2f(resLoc, canvas.width || 1, canvas.height || 1);
       gl.uniform1f(timeLoc, frozenTime);
       gl.uniform1f(animateLoc, animate);
-
       gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
 
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const { clientWidth, clientHeight } = wrap;
+      if (clientWidth === 0 || clientHeight === 0) return;
+
+      const nextW = Math.floor(clientWidth * dpr);
+      const nextH = Math.floor(clientHeight * dpr);
+      if (canvas.width === nextW && canvas.height === nextH) return;
+
+      canvas.width = nextW;
+      canvas.height = nextH;
+      gl.viewport(0, 0, nextW, nextH);
+      drawFrame(performance.now());
+    };
+
+    const render = (now: number) => {
+      if (disposed) return;
+      drawFrame(now);
       rafRef.current = requestAnimationFrame(render);
     };
 
     const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
+    ro.observe(wrap);
     resize();
+
+    /* Start loop immediately so look stays consistent (no blank→texture jump) */
+    rafRef.current = requestAnimationFrame(render);
 
     void loadTexture(gl, "/assets/liquid-metal-ref.png").then((tex) => {
       if (disposed) {
@@ -327,7 +361,6 @@ export function LiquidBackground({ className }: LiquidBackgroundProps) {
         return;
       }
       texture = tex;
-      rafRef.current = requestAnimationFrame(render);
     });
 
     return () => {
@@ -342,6 +375,7 @@ export function LiquidBackground({ className }: LiquidBackgroundProps) {
 
   return (
     <div
+      ref={wrapRef}
       className={["liquid-bg", className].filter(Boolean).join(" ")}
       aria-hidden
     >

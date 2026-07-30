@@ -50,7 +50,9 @@ Accessories:
 Gear:
 - item
 
-Only include categories that apply. Keep each bullet to a short product name (no long descriptions). Do not put packing items in the intro paragraph.`;
+Only include categories that apply. Keep each bullet to a short product name (no long descriptions). Do not put packing items in the intro paragraph.
+Every item MUST go under Top layer, Bottom layer, Accessories, or Gear — never a catch-all like "More items" or "Other".
+Jackets, fleeces, shirts, and base/mid layers → Top layer. Pants, leggings, shorts → Bottom layer. Gloves, hats, socks, scarves → Accessories. Packs, bottles, poles, tents → Gear.`;
 
 /** Plain chat — no subject guardrails, no tools. Set RECORDING_MODE=true in .env.local */
 const RECORDING_SYSTEM_PROMPT = `You are a helpful assistant. Answer naturally and conversationally.`;
