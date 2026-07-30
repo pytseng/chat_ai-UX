@@ -50,8 +50,8 @@
 .liquid-bg__veil {
   position: absolute;
   inset: 0;
-  /* Soft calm frost — keeps field peaceful and UI readable */
-  background: rgba(255, 255, 255, 0.1);
+  /* Light frost — lets motion/contrast read while keeping UI clear */
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .header {
@@ -99,11 +99,21 @@
 
 .header__title {
   margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
   font-size: 24px;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.48px;
   color: var(--emerald-jewel);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.header__title:hover {
+  opacity: 0.85;
 }
 
 .header__stash-btn {
@@ -395,6 +405,85 @@
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--emerald-jewel);
+}
+
+.pack-suggestions__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pack-section {
+  border: 1px solid var(--glass-border-soft);
+  border-radius: 14px;
+  background: var(--glass-fill);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  overflow: hidden;
+  box-shadow: var(--glass-highlight);
+}
+
+.pack-section__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.pack-section__toggle:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.pack-section__leading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pack-section__icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--emerald-jewel);
+}
+
+.pack-section__title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.pack-section__count {
+  flex-shrink: 0;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--emerald-mist);
+  color: var(--emerald-jewel);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.pack-section__chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.pack-section__toggle--open .pack-section__chevron {
+  transform: rotate(180deg);
+}
+
+.pack-section .pack-suggestions__list {
+  padding: 0 8px 8px;
+  margin: 0;
 }
 
 .pack-suggestions__list {
@@ -1049,6 +1138,106 @@
   background: #fff0f0;
   color: #b00020;
   font-size: 14px;
+}
+
+/* ── Preference prompt (one-go demographic picker) ── */
+
+.pref-prompt {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-fill-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+}
+
+.pref-prompt__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--emerald-jewel);
+}
+
+.pref-prompt__subtitle {
+  margin: -6px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.pref-prompt__field {
+  margin: 0;
+  padding: 0;
+  border: none;
+  min-width: 0;
+}
+
+.pref-prompt__field legend {
+  padding: 0;
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.pref-prompt__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pref-prompt__chip {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.pref-prompt__chip:hover {
+  border-color: var(--border-emerald);
+}
+
+.pref-prompt__chip--active {
+  background: var(--emerald-mist);
+  border-color: var(--border-emerald);
+  color: var(--emerald-jewel);
+  font-weight: 600;
+}
+
+.pref-prompt__continue {
+  margin-top: 2px;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: none;
+  background: var(--emerald-jewel);
+  color: var(--text-on-emerald);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--shadow-emerald);
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.pref-prompt__continue:hover:not(:disabled) {
+  background: var(--emerald-deep);
+}
+
+.pref-prompt__continue:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .input-area {

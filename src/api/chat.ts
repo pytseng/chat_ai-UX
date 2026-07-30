@@ -15,12 +15,16 @@ export type StreamChatCallbacks = {
 export async function streamChat(
   messages: Pick<Message, "role" | "content">[],
   callbacks: StreamChatCallbacks,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options?: { preferenceNote?: string }
 ): Promise<void> {
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({
+      messages,
+      preferenceNote: options?.preferenceNote,
+    }),
     signal,
   });
 

@@ -98,50 +98,59 @@ void main() {
   float dist = length(fromCenter);
 
   /*
-   * Smaller core glow + clearer organic morph.
-   * Glow radius stays tight; shape slowly drifts/breathes.
+   * Compact core glow with more obvious organic morph.
    */
   float angle = atan(fromCenter.y, fromCenter.x);
-  float morph = softNoise(fromCenter * 1.8 + t * 0.11);
+  float morph = softNoise(fromCenter * 1.6 + t * 0.22);
   float shapeWobble =
-    0.55 * softNoise(vec2(cos(angle), sin(angle)) * 1.1 + t * 0.14) +
-    0.45 * softNoise(fromCenter * 2.4 - t * 0.09);
-  float breath = 0.5 + 0.5 * sin(t * 0.42);
+    0.55 * softNoise(vec2(cos(angle), sin(angle)) * 1.0 + t * 0.28) +
+    0.45 * softNoise(fromCenter * 2.1 - t * 0.18);
+  float breath = 0.5 + 0.5 * sin(t * 0.7);
 
-  /* Organic radius — smaller base, more visible shape change */
-  float glowRadius = 0.16 + 0.055 * shapeWobble + 0.02 * breath;
+  /* Organic radius — clearer shape change over time */
+  float glowRadius = 0.15 + 0.08 * shapeWobble + 0.035 * breath;
   float core = smoothstep(glowRadius, 0.0, dist);
-  float coreSoft = smoothstep(glowRadius * 1.55, glowRadius * 0.15, dist);
+  float coreSoft = smoothstep(glowRadius * 1.85, glowRadius * 0.08, dist);
 
-  /* Stronger center-only warp so morph reads clearly */
+  /* Stronger center warp + soft field drift so motion reads clearly */
   vec2 radial = fromCenter / max(dist, 1e-3);
   vec2 tangential = vec2(-radial.y, radial.x);
-  float warpAmt = coreSoft * (0.045 + 0.025 * breath);
+  float warpAmt = coreSoft * (0.08 + 0.045 * breath);
   vec2 warp =
     radial * morph * warpAmt +
-    tangential * shapeWobble * warpAmt * 0.7;
+    tangential * shapeWobble * warpAmt * 0.95;
 
-  float zoom = 1.0 - core * (0.03 + 0.02 * breath);
+  /* Gentle whole-field liquid drift (still calm, but noticeable) */
+  float fieldDrift = softNoise(uv * 0.7 + t * 0.12);
+  warp += vec2(
+    softNoise(uv * 0.55 + t * 0.1),
+    softNoise(uv * 0.55 - t * 0.08 + 2.1)
+  ) * 0.018;
+
+  float zoom = 1.0 - core * (0.05 + 0.035 * breath) - fieldDrift * 0.012;
   vec2 sampleUv = clamp(center + (cover - center) * zoom + warp, 0.01, 0.99);
 
-  vec2 px = 3.5 / u_resolution;
+  vec2 px = 2.8 / u_resolution;
   vec3 color = sampleSoft(u_liquid, sampleUv, px);
 
-  /* Calm pearlescent wash over whole field */
-  vec3 pearl = vec3(0.96, 0.97, 0.975);
-  color = mix(color, pearl, 0.18);
+  /* Slightly more contrast — less pearl flattening */
+  vec3 pearl = vec3(0.95, 0.96, 0.97);
+  color = mix(color, pearl, 0.08);
+  color = (color - 0.5) * 1.12 + 0.5;
 
   /* Compact soft glow under center — warm + emerald scent */
-  float glow = core * (0.6 + 0.4 * breath + morph * 0.18);
-  color += vec3(1.0, 0.98, 0.93) * glow * 0.18;
-  color += vec3(0.05, 0.66, 0.36) * glow * 0.045;
+  float glow = core * (0.55 + 0.45 * breath + morph * 0.25);
+  color += vec3(1.0, 0.98, 0.92) * glow * 0.22;
+  color += vec3(0.05, 0.66, 0.36) * glow * 0.07;
 
-  /* Barely-there soft hue refraction across the calm field */
-  float hue = 0.5 + 0.5 * softNoise(uv * 0.9 + t * 0.03);
+  /* Soft hue refraction — a bit more present, still calm */
+  float hue = 0.5 + 0.5 * softNoise(uv * 0.85 + t * 0.06);
   vec3 emerald = vec3(0.05, 0.66, 0.36);
-  vec3 pink = vec3(1.0, 0.7, 0.72);
-  vec3 softHolo = mix(emerald, pink, hue);
-  color += softHolo * (0.016 + core * 0.025);
+  vec3 pink = vec3(1.0, 0.62, 0.68);
+  vec3 lavender = vec3(0.72, 0.68, 0.92);
+  vec3 softHolo = mix(emerald, pink, smoothstep(0.2, 0.75, hue));
+  softHolo = mix(softHolo, lavender, 0.28 * smoothstep(0.55, 1.0, hue));
+  color += softHolo * (0.035 + core * 0.05 + abs(fieldDrift) * 0.02);
 
   fragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
 }

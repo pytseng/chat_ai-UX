@@ -1,12 +1,30 @@
-import { useState } from "react";
-import type { PackSuggestion } from "../../lib/suggestions";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
+import { Backpack, ChevronDown, Shirt } from "lucide-react";
+import type {
+  PackSuggestion,
+  SuggestionCategory,
+  SuggestionCategoryId,
+} from "../../lib/suggestions";
+import { groupSuggestionsByCategory } from "../../lib/suggestions";
 import { fetchProductImages } from "../api/productImages";
 import type { ImageSearchResult } from "../../lib/imageSearch";
 import { useSavedProducts } from "../hooks/useSavedProducts";
-import { CheckIcon, ChevronDownIcon, PlusIcon, UndoIcon } from "./Icons";
+import {
+  formatPreferencesForSearch,
+  type UserPreferences,
+} from "../lib/userPreferences";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  GlovesIcon,
+  PantsIcon,
+  PlusIcon,
+  UndoIcon,
+} from "./Icons";
 
 type SuggestionItemsProps = {
   items: PackSuggestion[];
+  preferences?: UserPreferences | null;
 };
 
 type ItemState = {
@@ -15,17 +33,53 @@ type ItemState = {
   products: ImageSearchResult[];
 };
 
-export function SuggestionItems({ items }: SuggestionItemsProps) {
+type CategoryIcon = ComponentType<{ className?: string }>;
+
+const CATEGORY_ICONS: Record<SuggestionCategoryId, CategoryIcon> = {
+  top: ({ className }) => <Shirt className={className} strokeWidth={1.75} aria-hidden />,
+  bottom: PantsIcon,
+  accessories: GlovesIcon,
+  gear: ({ className }) => <Backpack className={className} strokeWidth={1.75} aria-hidden />,
+  other: ({ className }) => <Backpack className={className} strokeWidth={1.75} aria-hidden />,
+};
+
+export function SuggestionItems({
+  items,
+  preferences = null,
+}: SuggestionItemsProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [itemState, setItemState] = useState<Record<string, ItemState>>({});
   const [ownedIds, setOwnedIds] = useState<Record<string, boolean>>({});
   const [ownedOpen, setOwnedOpen] = useState(false);
   const { add, isSaved } = useSavedProducts();
 
-  if (items.length === 0) return null;
+  const activeItems = useMemo(
+    () => items.filter((item) => !ownedIds[item.id]),
+    [items, ownedIds]
+  );
+  const ownedItems = useMemo(
+    () => items.filter((item) => ownedIds[item.id]),
+    [items, ownedIds]
+  );
+  const activeCategories = useMemo(
+    () => groupSuggestionsByCategory(activeItems),
+    [activeItems]
+  );
 
-  const activeItems = items.filter((item) => !ownedIds[item.id]);
-  const ownedItems = items.filter((item) => ownedIds[item.id]);
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  useEffect(() => {
+    const first = activeCategories[0];
+    if (!first) return;
+    const key = sectionKey(first);
+    setOpenCategories((prev) =>
+      Object.keys(prev).length === 0 ? { [key]: true } : prev
+    );
+  }, [activeCategories]);
+
+  if (items.length === 0) return null;
 
   const toggle = (id: string, title: string) => {
     const nextOpen = !expanded[id];
@@ -34,6 +88,10 @@ export function SuggestionItems({ items }: SuggestionItemsProps) {
     if (nextOpen && !itemState[id]?.products.length && !itemState[id]?.loading) {
       void loadProducts(id, title);
     }
+  };
+
+  const toggleCategory = (key: string) => {
+    setOpenCategories((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const markOwned = (id: string) => {
@@ -59,7 +117,10 @@ export function SuggestionItems({ items }: SuggestionItemsProps) {
     }));
 
     try {
-      const products = await fetchProductImages(title);
+      const hint = preferences
+        ? formatPreferencesForSearch(preferences)
+        : undefined;
+      const products = await fetchProductImages(title, undefined, hint);
       setItemState((prev) => ({
         ...prev,
         [id]: { loading: false, error: null, products },
@@ -80,29 +141,61 @@ export function SuggestionItems({ items }: SuggestionItemsProps) {
     <div className="pack-suggestions" aria-label="Suggested items">
       <p className="pack-suggestions__label">Suggested items</p>
 
-      {activeItems.length > 0 ? (
-        <ul className="pack-suggestions__list">
-          {activeItems.map((item) => (
-            <SuggestionRow
-              key={item.id}
-              item={item}
-              isOpen={Boolean(expanded[item.id])}
-              state={itemState[item.id]}
-              onToggle={() => toggle(item.id, item.title)}
-              onMarkOwned={() => markOwned(item.id)}
-              onRetry={() => loadProducts(item.id, item.title)}
-              onSave={(product) =>
-                add({
-                  name: product.name,
-                  imageUrl: product.imageUrl,
-                  categoryTitle: item.title,
-                  sourceUrl: product.sourceUrl,
-                })
-              }
-              isSaved={isSaved}
-            />
-          ))}
-        </ul>
+      {activeCategories.length > 0 ? (
+        <div className="pack-suggestions__sections">
+          {activeCategories.map((section) => {
+            const key = sectionKey(section);
+            const isOpen = Boolean(openCategories[key]);
+            const Icon = CATEGORY_ICONS[section.id];
+            return (
+              <section key={key} className="pack-section">
+                <button
+                  type="button"
+                  className={[
+                    "pack-section__toggle",
+                    isOpen ? "pack-section__toggle--open" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => toggleCategory(key)}
+                  aria-expanded={isOpen}
+                >
+                  <span className="pack-section__leading">
+                    <Icon className="pack-section__icon" />
+                    <span className="pack-section__title">{section.label}</span>
+                    <span className="pack-section__count">{section.items.length}</span>
+                  </span>
+                  <ChevronDown className="pack-section__chevron" aria-hidden size={18} strokeWidth={1.75} />
+                </button>
+
+                {isOpen && (
+                  <ul className="pack-suggestions__list">
+                    {section.items.map((item) => (
+                      <SuggestionRow
+                        key={item.id}
+                        item={item}
+                        isOpen={Boolean(expanded[item.id])}
+                        state={itemState[item.id]}
+                        onToggle={() => toggle(item.id, item.title)}
+                        onMarkOwned={() => markOwned(item.id)}
+                        onRetry={() => loadProducts(item.id, item.title)}
+                        onSave={(product) =>
+                          add({
+                            name: product.name,
+                            imageUrl: product.imageUrl,
+                            categoryTitle: `${item.categoryLabel} · ${item.title}`,
+                            sourceUrl: product.sourceUrl,
+                          })
+                        }
+                        isSaved={isSaved}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </section>
+            );
+          })}
+        </div>
       ) : (
         <p className="pack-suggestions__all-owned">
           All items marked as owned — open below to review or add any back.
@@ -152,6 +245,10 @@ export function SuggestionItems({ items }: SuggestionItemsProps) {
       )}
     </div>
   );
+}
+
+function sectionKey(section: SuggestionCategory): string {
+  return `${section.id}:${section.label}`;
 }
 
 type SuggestionRowProps = {

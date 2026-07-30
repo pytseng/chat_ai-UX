@@ -60,13 +60,23 @@ app.post("/api/chat", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
 
   try {
-    await streamChatResponse(apiKey, messages, (event) => {
-      if (event.type === "status") {
-        res.write(`data: ${JSON.stringify({ status: event.status })}\n\n`);
-        return;
+    await streamChatResponse(
+      apiKey,
+      messages,
+      (event) => {
+        if (event.type === "status") {
+          res.write(`data: ${JSON.stringify({ status: event.status })}\n\n`);
+          return;
+        }
+        res.write(`data: ${JSON.stringify({ text: event.text })}\n\n`);
+      },
+      {
+        preferenceNote:
+          typeof req.body?.preferenceNote === "string"
+            ? req.body.preferenceNote
+            : undefined,
       }
-      res.write(`data: ${JSON.stringify({ text: event.text })}\n\n`);
-    });
+    );
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
     res.end();
   } catch (err) {

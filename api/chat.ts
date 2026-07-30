@@ -33,6 +33,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return;
         }
         res.write(`data: ${JSON.stringify({ text: event.text })}\n\n`);
+      },
+      {
+        preferenceNote:
+          typeof req.body?.preferenceNote === "string"
+            ? req.body.preferenceNote
+            : undefined,
       }
     );
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);

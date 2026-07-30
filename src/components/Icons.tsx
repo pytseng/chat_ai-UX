@@ -164,3 +164,43 @@ export function MenuIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+/** Minimal Lucide-style pair of pants */
+export function PantsIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7 3h10l1.2 8.5L19 21h-4.2l-.8-9.5h-.9L12.3 21H8.1L9 11.5 7 3z" />
+      <path d="M12.05 3v8.5" />
+    </svg>
+  );
+}
+
+/** Minimal Lucide-style gloves */
+export function GlovesIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7.5 13.5V8a1.5 1.5 0 013 0v3.5" />
+      <path d="M10.5 11.5V7a1.5 1.5 0 013 0v4.5" />
+      <path d="M13.5 11.5V8a1.5 1.5 0 013 0v6.5a3.5 3.5 0 01-3.5 3.5h-1.2A3.3 3.3 0 019 14.7v-1.2" />
+      <path d="M7.5 13.5H6A1.5 1.5 0 014.5 12v0A1.5 1.5 0 016 10.5h1.5" />
+    </svg>
+  );
+}

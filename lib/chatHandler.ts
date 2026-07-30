@@ -39,7 +39,18 @@ Tools (only for in-scope travel/packing questions):
 
 Be honest when you lack live product prices or stock. Keep replies short and scannable unless asked for detail.
 
-When listing gear to pack, use a short intro paragraph then bullet points (one item per line with a leading dash) so items can be shown as expandable product suggestions.`;
+When listing gear to pack, use a short intro paragraph (2–3 sentences max), then organize items into these category headings with dash bullets under each:
+
+Top layer:
+- item
+Bottom layer:
+- item
+Accessories:
+- item
+Gear:
+- item
+
+Only include categories that apply. Keep each bullet to a short product name (no long descriptions). Do not put packing items in the intro paragraph.`;
 
 /** Plain chat — no subject guardrails, no tools. Set RECORDING_MODE=true in .env.local */
 const RECORDING_SYSTEM_PROMPT = `You are a helpful assistant. Answer naturally and conversationally.`;
@@ -120,7 +131,10 @@ function buildInitialReasoning(userMessage: string): ReasoningStatus {
   return REASONING.matchingLayers();
 }
 
-function buildSystemPrompt(timeZone = "Asia/Taipei"): string {
+function buildSystemPrompt(
+  timeZone = "Asia/Taipei",
+  preferenceNote?: string
+): string {
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -129,11 +143,14 @@ function buildSystemPrompt(timeZone = "Asia/Taipei"): string {
     timeZone,
   });
 
-  if (isRecordingMode()) {
-    return `${RECORDING_SYSTEM_PROMPT}\n\nToday's date: ${today} (${timeZone}).`;
-  }
+  const base = isRecordingMode()
+    ? `${RECORDING_SYSTEM_PROMPT}\n\nToday's date: ${today} (${timeZone}).`
+    : `${SUBJECT_SYSTEM_PROMPT}\n\nToday's date: ${today} (${timeZone}).`;
 
-  return `${SUBJECT_SYSTEM_PROMPT}\n\nToday's date: ${today} (${timeZone}).`;
+  if (preferenceNote?.trim()) {
+    return `${base}\n\n${preferenceNote.trim()}`;
+  }
+  return base;
 }
 
 function parsePlaceFromToolInput(inputJson: string): string | undefined {
@@ -325,10 +342,10 @@ export async function streamChatResponse(
   apiKey: string,
   messages: ChatMessage[],
   onEvent: ChatStreamHandler,
-  options?: { timeZone?: string }
+  options?: { timeZone?: string; preferenceNote?: string }
 ): Promise<void> {
   const client = new Anthropic({ apiKey });
-  const system = buildSystemPrompt(options?.timeZone);
+  const system = buildSystemPrompt(options?.timeZone, options?.preferenceNote);
 
   const conversationMessages: Anthropic.MessageParam[] = messages.map((m) => ({
     role: m.role,

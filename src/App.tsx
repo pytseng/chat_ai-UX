@@ -7,6 +7,12 @@ import { MenuIcon } from "./components/Icons";
 import { SavedStashPanel } from "./components/SavedStashPanel";
 import { useChatHistory } from "./hooks/useChatHistory";
 import { useSavedProducts } from "./hooks/useSavedProducts";
+import {
+  formatPreferencesForPrompt,
+  loadUserPreferences,
+  persistUserPreferences,
+  type UserPreferences,
+} from "./lib/userPreferences";
 import "./App.css";
 
 function createId() {
@@ -38,29 +44,18 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [stashOpen, setStashOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [preferences, setPreferences] = useState<UserPreferences | null>(() =>
+    loadUserPreferences()
+  );
+  const [awaitingPreferences, setAwaitingPreferences] = useState(false);
   const { saved, count, remove } = useSavedProducts();
 
-  const sendMessage = useCallback(
-    async (textOverride?: string) => {
-      const text = (textOverride ?? input).trim();
-      if (!text || isLoading) return;
-
-      const userMessage: Message = {
-        id: createId(),
-        role: "user",
-        content: text,
-      };
-
-      const assistantId = createId();
-      const assistantMessage: Message = {
-        id: assistantId,
-        role: "assistant",
-        content: "",
-      };
-
-      const nextMessages = [...messages, userMessage];
-      setMessages([...nextMessages, assistantMessage]);
-      setInput("");
+  const runAssistant = useCallback(
+    async (
+      conversation: Message[],
+      assistantId: string,
+      prefs: UserPreferences
+    ) => {
       setError(null);
       setReasoningSteps([]);
       setIsLoading(true);
@@ -72,7 +67,7 @@ export default function App() {
 
       try {
         await streamChat(
-          [...nextMessages].map(({ role, content }) => ({ role, content })),
+          conversation.map(({ role, content }) => ({ role, content })),
           {
             onStatus: (status) => {
               setReasoningSteps((prev) => {
@@ -94,7 +89,8 @@ export default function App() {
               );
             },
           },
-          controller.signal
+          controller.signal,
+          { preferenceNote: formatPreferencesForPrompt(prefs) }
         );
       } catch (err) {
         if (isAbortError(err)) {
@@ -118,7 +114,73 @@ export default function App() {
         setReasoningSteps([]);
       }
     },
-    [input, isLoading, messages, setMessages]
+    [setMessages]
+  );
+
+  const sendMessage = useCallback(
+    async (textOverride?: string) => {
+      const text = (textOverride ?? input).trim();
+      if (!text || isLoading || awaitingPreferences) return;
+
+      const userMessage: Message = {
+        id: createId(),
+        role: "user",
+        content: text,
+      };
+
+      setInput("");
+      setError(null);
+
+      if (!preferences) {
+        setMessages([...messages, userMessage]);
+        setAwaitingPreferences(true);
+        return;
+      }
+
+      const assistantId = createId();
+      const assistantMessage: Message = {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+      };
+      const nextMessages = [...messages, userMessage, assistantMessage];
+      setMessages(nextMessages);
+      await runAssistant(
+        [...messages, userMessage],
+        assistantId,
+        preferences
+      );
+    },
+    [
+      awaitingPreferences,
+      input,
+      isLoading,
+      messages,
+      preferences,
+      runAssistant,
+      setMessages,
+    ]
+  );
+
+  const handlePreferencesSubmit = useCallback(
+    async (prefs: UserPreferences) => {
+      persistUserPreferences(prefs);
+      setPreferences(prefs);
+      setAwaitingPreferences(false);
+
+      const lastUser = [...messages].reverse().find((m) => m.role === "user");
+      if (!lastUser || isLoading) return;
+
+      const assistantId = createId();
+      const assistantMessage: Message = {
+        id: assistantId,
+        role: "assistant",
+        content: "",
+      };
+      setMessages([...messages, assistantMessage]);
+      await runAssistant(messages, assistantId, prefs);
+    },
+    [isLoading, messages, runAssistant, setMessages]
   );
 
   const stopGeneration = useCallback(() => {
@@ -140,6 +202,8 @@ export default function App() {
     setReasoningSteps([]);
     setStreamingId(null);
     setIsLoading(false);
+    setDrawerOpen(false);
+    setAwaitingPreferences(false);
     startNewChat();
   }, [startNewChat]);
 
@@ -152,6 +216,7 @@ export default function App() {
       setReasoningSteps([]);
       setStreamingId(null);
       setIsLoading(false);
+      setAwaitingPreferences(false);
       openChat(id);
     },
     [activeId, openChat]
@@ -171,7 +236,14 @@ export default function App() {
             >
               <MenuIcon />
             </button>
-            <h1 className="header__title">SecretStash</h1>
+            <button
+              type="button"
+              className="header__title"
+              onClick={handleNewChat}
+              aria-label="Go to home, start new chat"
+            >
+              SecretStash
+            </button>
           </div>
           <button
             type="button"
@@ -189,7 +261,10 @@ export default function App() {
           reasoningSteps={reasoningSteps}
           error={error}
           onSuggestion={handleSuggestion}
-          suggestionsDisabled={isLoading}
+          suggestionsDisabled={isLoading || awaitingPreferences}
+          awaitingPreferences={awaitingPreferences}
+          onPreferencesSubmit={handlePreferencesSubmit}
+          preferences={preferences}
         />
 
         <ChatInput
@@ -198,6 +273,7 @@ export default function App() {
           onSend={sendMessage}
           onStop={stopGeneration}
           isGenerating={isLoading}
+          disabled={awaitingPreferences}
         />
 
         <SavedStashPanel

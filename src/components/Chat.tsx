@@ -4,6 +4,8 @@ import type { Message, ReasoningStatus } from "../api/chat";
 import { ReasoningUI } from "./ReasoningUI";
 import { FluidDotsSpinner } from "./FluidDotsSpinner";
 import { SuggestionItems } from "./SuggestionItems";
+import { PreferencePrompt } from "./PreferencePrompt";
+import type { UserPreferences } from "../lib/userPreferences";
 import {
   ArrowUpIcon,
   CodeIcon,
@@ -24,6 +26,7 @@ type ChatInputProps = {
   onSend: () => void;
   onStop?: () => void;
   isGenerating?: boolean;
+  disabled?: boolean;
 };
 
 export function ChatInput({
@@ -32,9 +35,10 @@ export function ChatInput({
   onSend,
   onStop,
   isGenerating = false,
+  disabled = false,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const canSend = value.trim().length > 0 && !isGenerating;
+  const canSend = value.trim().length > 0 && !isGenerating && !disabled;
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -56,11 +60,16 @@ export function ChatInput({
         <textarea
           ref={textareaRef}
           className="chat-box__field"
-          placeholder="What would you like to know?"
+          placeholder={
+            disabled
+              ? "Finish preferences above to continue…"
+              : "What would you like to know?"
+          }
           rows={1}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
+          disabled={disabled || isGenerating}
           aria-label="Message"
         />
         <div className="chat-box__toolbar">
@@ -148,6 +157,9 @@ type MessageListProps = {
   error: string | null;
   onSuggestion?: (text: string) => void;
   suggestionsDisabled?: boolean;
+  awaitingPreferences?: boolean;
+  onPreferencesSubmit?: (prefs: UserPreferences) => void;
+  preferences?: UserPreferences | null;
 };
 
 export function MessageList({
@@ -157,6 +169,9 @@ export function MessageList({
   error,
   onSuggestion,
   suggestionsDisabled = false,
+  awaitingPreferences = false,
+  onPreferencesSubmit,
+  preferences = null,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -257,11 +272,17 @@ export function MessageList({
               </div>
             )}
             {showSuggestions && (
-              <SuggestionItems items={assistantParsed.suggestions} />
+              <SuggestionItems
+                items={assistantParsed.suggestions}
+                preferences={preferences}
+              />
             )}
           </div>
         );
       })}
+      {awaitingPreferences && onPreferencesSubmit && (
+        <PreferencePrompt onSubmit={onPreferencesSubmit} />
+      )}
       {error && <div className="message message--error">{error}</div>}
       <div ref={bottomRef} />
     </div>
