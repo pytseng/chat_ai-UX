@@ -1,10 +1,12 @@
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, type KeyboardEvent } from "react";
 import { getSuggestionsFromContent } from "../../lib/suggestions";
 import type { Message, ReasoningStatus } from "../api/chat";
 import { ReasoningUI } from "./ReasoningUI";
 import { FluidDotsSpinner } from "./FluidDotsSpinner";
+import { MessageProse } from "./MessageProse";
 import { SuggestionItems } from "./SuggestionItems";
 import { PreferencePrompt } from "./PreferencePrompt";
+import { WeatherWidget } from "./WeatherWidget";
 import type { UserPreferences } from "../lib/userPreferences";
 import {
   ArrowUpIcon,
@@ -14,11 +16,58 @@ import {
   StopIcon,
 } from "./Icons";
 
-export const SUGGESTION_PROMPTS = [
-  "What to pack for Tokyo in spring?",
-  "Layers for hiking Patagonia",
-  "Street style for a Paris weekend",
+/** Current / immediate timing. */
+const SUGGESTIONS_NOW = [
+  "Iceland ice caves right now?",
+  "Kite surf Tarifa right now?",
+  "Wing foil Maui this weekend?",
+  "Big-wave surf Portugal this weekend?",
+  "Ski tour Chamonix today?",
 ] as const;
+
+/** Near-term date range (~2–3 weeks out). */
+const SUGGESTIONS_NEAR = [
+  "Patagonia trek in 20 days?",
+  "Canyoneer Zion in 2 weeks?",
+  "Grand Canyon rafting in 18 days?",
+  "Banff ice climb in 3 weeks?",
+  "Vietnam moto trip in 20 days?",
+] as const;
+
+/** Further-out season, month, or specific later timing. */
+const SUGGESTIONS_LATER = [
+  "Kilimanjaro summit in January?",
+  "Torres del Paine in March?",
+  "Sahara dune trek in November?",
+  "Everest base camp in April?",
+  "Alps via ferrata in September?",
+  "Scuba the Barrier Reef in July?",
+  "Paraglide Interlaken this summer?",
+  "Whitewater kayak Nepal in October?",
+  "Free climb Yosemite in spring?",
+  "Backcountry snowboard Japan in Feb?",
+  "Andes mountaineering this fall?",
+  "Ice dive Antarctica in December?",
+  "UTMB trail run in August?",
+  "Heli-ski Alaska next March?",
+  "Volcano trek Bali in dry season?",
+  "Cave dive Mexico next spring?",
+] as const;
+
+export const SUGGESTION_PROMPTS = [
+  ...SUGGESTIONS_NOW,
+  ...SUGGESTIONS_NEAR,
+  ...SUGGESTIONS_LATER,
+] as const;
+
+function pickOne<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)]!;
+}
+
+/** Always one now, one near range, one further timing. */
+function pickRandomSuggestions(): string[] {
+  return [pickOne(SUGGESTIONS_NOW), pickOne(SUGGESTIONS_NEAR), pickOne(SUGGESTIONS_LATER)];
+}
 
 type ChatInputProps = {
   value: string;
@@ -174,6 +223,7 @@ export function MessageList({
   preferences = null,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const starterPrompts = useMemo(() => pickRandomSuggestions(), []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -192,12 +242,12 @@ export function MessageList({
       {messages.length === 0 && !error && (
         <div className="messages__empty-state">
           <p className="messages__empty">
-            Ask about what to pack for a trip, street style for a destination, or
-            functional layers for the weather.
+            Ask what to pack for a trek, summit, desert crossing, or any wild
+            adventure. Layers and gear for the trail ahead.
           </p>
           {onSuggestion && (
             <div className="suggestions" role="group" aria-label="Suggested questions">
-              {SUGGESTION_PROMPTS.map((prompt) => (
+              {starterPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
@@ -218,22 +268,32 @@ export function MessageList({
           msg.role === "assistant"
             ? getSuggestionsFromContent(msg.content)
             : null;
+        const hasTextAnswer = Boolean(
+          assistantParsed?.prose?.trim() ||
+            (msg.role === "assistant" && msg.content.trim()),
+        );
+        // Reveal widgets only after the turn finishes so order stays:
+        // reasoning → text → weather → items
+        const revealExtras = !isStreaming && hasTextAnswer;
+
         const showSuggestions =
+          revealExtras &&
           assistantParsed &&
-          assistantParsed.suggestions.length > 0 &&
-          !isStreaming;
+          assistantParsed.suggestions.length > 0;
+
+        const showWeather =
+          revealExtras && msg.role === "assistant" && Boolean(msg.weather);
 
         const showAssistantBubble =
           msg.role === "user" ||
-          Boolean(assistantParsed?.prose) ||
-          Boolean(msg.content) ||
+          hasTextAnswer ||
           msg.stopped ||
           (isStreaming && !showReasoning);
 
         const stoppedWithContent =
           msg.role === "assistant" &&
           msg.stopped &&
-          Boolean(assistantParsed?.prose || msg.content.trim());
+          hasTextAnswer;
 
         const stoppedEarly =
           msg.role === "assistant" && msg.stopped && !msg.content.trim();
@@ -260,7 +320,9 @@ export function MessageList({
                   <StoppedNotice variant="early" />
                 ) : (
                   <>
-                    {assistantParsed?.prose || msg.content}
+                    <MessageProse
+                      text={assistantParsed?.prose || msg.content}
+                    />
                     {isStreaming && !showReasoning && (
                       <FluidDotsSpinner className="fluid-dots--message" />
                     )}
@@ -270,6 +332,9 @@ export function MessageList({
                   </>
                 )}
               </div>
+            )}
+            {showWeather && msg.weather && (
+              <WeatherWidget weather={msg.weather} />
             )}
             {showSuggestions && (
               <SuggestionItems

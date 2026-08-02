@@ -78,6 +78,20 @@ export default function App() {
                 return [...prev, status];
               });
             },
+            onWeather: (weather) => {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, weather } : m
+                )
+              );
+            },
+            onTextClear: () => {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId ? { ...m, content: "" } : m
+                )
+              );
+            },
             onText: (chunk) => {
               setReasoningSteps([]);
               setMessages((prev) =>
@@ -183,6 +197,12 @@ export default function App() {
     [isLoading, messages, runAssistant, setMessages]
   );
 
+  const handlePreferencesSave = useCallback((prefs: UserPreferences) => {
+    persistUserPreferences(prefs);
+    setPreferences(prefs);
+    setAwaitingPreferences(false);
+  }, []);
+
   const stopGeneration = useCallback(() => {
     abortRef.current?.abort();
   }, []);
@@ -232,7 +252,7 @@ export default function App() {
               type="button"
               className="header__menu-btn"
               onClick={() => setDrawerOpen(true)}
-              aria-label="Open chat history"
+              aria-label="Open menu"
             >
               <MenuIcon />
             </button>
@@ -294,10 +314,12 @@ export default function App() {
           open={drawerOpen}
           threads={threads}
           activeId={activeId}
+          preferences={preferences}
           onClose={() => setDrawerOpen(false)}
           onNewChat={handleNewChat}
           onOpenChat={handleOpenChat}
           onDeleteChat={deleteChat}
+          onSavePreferences={handlePreferencesSave}
         />
       </div>
     </div>

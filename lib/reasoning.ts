@@ -108,9 +108,71 @@ export function guessPlaceFromMessage(message: string): string | undefined {
 }
 
 export function messageHintsWeather(message: string): boolean {
-  return /\b(weather|rain|snow|cold|hot|humid|forecast|temperature|wind|layer)\b/i.test(
+  return /\b(weather|rain|snow|cold|hot|humid|forecast|temperature|wind)\b/i.test(
     message
   );
+}
+
+/** Packing / adventure asks that should check climate before choosing layers. */
+export function messageNeedsClimateFirst(message: string): boolean {
+  if (messageHintsWeather(message)) return true;
+  if (guessPlaceFromMessage(message)) return true;
+  return /\b(pack|trek|hike|climb|ski|surf|dive|raft|camp|trip|trail|summit|foil|kayak|paraglide|canyoneer|mountaineering|moto|via ferrata)\b/i.test(
+    message
+  );
+}
+
+const MONTH_NAME_TO_NUM: Record<string, number> = {
+  january: 1,
+  jan: 1,
+  february: 2,
+  feb: 2,
+  march: 3,
+  mar: 3,
+  april: 4,
+  apr: 4,
+  may: 5,
+  june: 6,
+  jun: 6,
+  july: 7,
+  jul: 7,
+  august: 8,
+  aug: 8,
+  september: 9,
+  sep: 9,
+  sept: 9,
+  october: 10,
+  oct: 10,
+  november: 11,
+  nov: 11,
+  december: 12,
+  dec: 12,
+};
+
+const SEASON_TO_MONTHS: Record<string, number[]> = {
+  spring: [3, 4, 5],
+  summer: [6, 7, 8],
+  fall: [9, 10, 11],
+  autumn: [9, 10, 11],
+  winter: [12, 1, 2],
+};
+
+/** Pull travel months mentioned in a user message (e.g. "October and February"). */
+export function guessMonthsFromMessage(message: string): number[] {
+  const found = new Set<number>();
+  const lower = message.toLowerCase();
+
+  for (const [name, num] of Object.entries(MONTH_NAME_TO_NUM)) {
+    const re = new RegExp(`\\b${name}\\b`, "i");
+    if (re.test(lower)) found.add(num);
+  }
+
+  for (const [season, months] of Object.entries(SEASON_TO_MONTHS)) {
+    const re = new RegExp(`\\b${season}\\b`, "i");
+    if (re.test(lower)) months.forEach((m) => found.add(m));
+  }
+
+  return [...found].slice(0, 4);
 }
 
 export function messageHintsWeb(message: string): boolean {

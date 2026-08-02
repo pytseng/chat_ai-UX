@@ -1,15 +1,21 @@
+import type { WeatherResult } from "../../lib/weather";
+
 export type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
   stopped?: boolean;
+  weather?: WeatherResult;
 };
 
 export type { ReasoningStatus } from "../../lib/reasoning";
+export type { WeatherResult };
 
 export type StreamChatCallbacks = {
   onText: (text: string) => void;
+  onTextClear?: () => void;
   onStatus?: (status: import("../../lib/reasoning").ReasoningStatus) => void;
+  onWeather?: (weather: WeatherResult) => void;
 };
 
 export async function streamChat(
@@ -56,12 +62,16 @@ export async function streamChat(
       if (!line.startsWith("data: ")) continue;
       const payload = JSON.parse(line.slice(6)) as {
         text?: string;
+        text_clear?: boolean;
         status?: import("../../lib/reasoning").ReasoningStatus;
+        weather?: WeatherResult;
         error?: string;
         done?: boolean;
       };
       if (payload.error) throw new Error(payload.error);
       if (payload.status) callbacks.onStatus?.(payload.status);
+      if (payload.weather) callbacks.onWeather?.(payload.weather);
+      if (payload.text_clear) callbacks.onTextClear?.();
       if (payload.text) callbacks.onText(payload.text);
     }
   }

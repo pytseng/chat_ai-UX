@@ -1,8 +1,14 @@
-import { useEffect, useMemo, useState, type ComponentType } from "react";
-import { Backpack, ChevronDown, Shirt } from "lucide-react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+} from "react";
+import { Backpack, CircleMinus, RotateCcw, Shirt } from "lucide-react";
 import type {
   PackSuggestion,
-  SuggestionCategory,
   SuggestionCategoryId,
 } from "../../lib/suggestions";
 import { groupSuggestionsByCategory } from "../../lib/suggestions";
@@ -14,18 +20,33 @@ import {
   type UserPreferences,
 } from "../lib/userPreferences";
 import {
-  CheckIcon,
   ChevronDownIcon,
   GlovesIcon,
   PantsIcon,
   PlusIcon,
-  UndoIcon,
 } from "./Icons";
 
 type SuggestionItemsProps = {
   items: PackSuggestion[];
   preferences?: UserPreferences | null;
 };
+
+function findScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null;
+  while (node) {
+    const style = getComputedStyle(node);
+    const overflowY = style.overflowY;
+    if (
+      overflowY === "auto" ||
+      overflowY === "scroll" ||
+      overflowY === "overlay"
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
 
 type ItemState = {
   loading: boolean;
@@ -43,6 +64,15 @@ const CATEGORY_ICONS: Record<SuggestionCategoryId, CategoryIcon> = {
   other: ({ className }) => <Backpack className={className} strokeWidth={1.75} aria-hidden />,
 };
 
+/** Short labels so tabs fit on a phone width. */
+const TAB_LABELS: Record<SuggestionCategoryId, string> = {
+  top: "Top",
+  bottom: "Bottom",
+  accessories: "Accessories",
+  gear: "Gear",
+  other: "More",
+};
+
 export function SuggestionItems({
   items,
   preferences = null,
@@ -51,7 +81,10 @@ export function SuggestionItems({
   const [itemState, setItemState] = useState<Record<string, ItemState>>({});
   const [ownedIds, setOwnedIds] = useState<Record<string, boolean>>({});
   const [ownedOpen, setOwnedOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<SuggestionCategoryId | null>(null);
   const { add, isSaved } = useSavedProducts();
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const tabAnchorTop = useRef<number | null>(null);
 
   const activeItems = useMemo(
     () => items.filter((item) => !ownedIds[item.id]),
@@ -66,18 +99,50 @@ export function SuggestionItems({
     [activeItems]
   );
 
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
-    {}
-  );
+  const selectedCategory = useMemo(() => {
+    if (activeCategories.length === 0) return null;
+    return (
+      activeCategories.find((c) => c.id === activeTab) ?? activeCategories[0]
+    );
+  }, [activeCategories, activeTab]);
+
+  const selectTab = (id: SuggestionCategoryId) => {
+    if (id === activeTab) return;
+    const tabs = tabsRef.current;
+    if (tabs) {
+      tabAnchorTop.current = tabs.getBoundingClientRect().top;
+    }
+    setExpanded({});
+    setActiveTab(id);
+  };
 
   useEffect(() => {
-    const first = activeCategories[0];
-    if (!first) return;
-    const key = sectionKey(first);
-    setOpenCategories((prev) =>
-      Object.keys(prev).length === 0 ? { [key]: true } : prev
-    );
-  }, [activeCategories]);
+    if (activeCategories.length === 0) {
+      setActiveTab(null);
+      return;
+    }
+    if (!activeTab || !activeCategories.some((c) => c.id === activeTab)) {
+      const tabs = tabsRef.current;
+      if (tabs) {
+        tabAnchorTop.current = tabs.getBoundingClientRect().top;
+      }
+      setExpanded({});
+      setActiveTab(activeCategories[0].id);
+    }
+  }, [activeCategories, activeTab]);
+
+  useLayoutEffect(() => {
+    const anchor = tabAnchorTop.current;
+    if (anchor == null) return;
+    const tabs = tabsRef.current;
+    const scroller = findScrollParent(tabs);
+    tabAnchorTop.current = null;
+    if (!tabs || !scroller) return;
+    const delta = tabs.getBoundingClientRect().top - anchor;
+    if (Math.abs(delta) > 0.5) {
+      scroller.scrollTop += delta;
+    }
+  }, [activeTab, selectedCategory?.items.length]);
 
   if (items.length === 0) return null;
 
@@ -88,10 +153,6 @@ export function SuggestionItems({
     if (nextOpen && !itemState[id]?.products.length && !itemState[id]?.loading) {
       void loadProducts(id, title);
     }
-  };
-
-  const toggleCategory = (key: string) => {
-    setOpenCategories((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const markOwned = (id: string) => {
@@ -139,71 +200,72 @@ export function SuggestionItems({
 
   return (
     <div className="pack-suggestions" aria-label="Suggested items">
-      <p className="pack-suggestions__label">Suggested items</p>
-
-      {activeCategories.length > 0 ? (
-        <div className="pack-suggestions__sections">
-          {activeCategories.map((section) => {
-            const key = sectionKey(section);
-            const isOpen = Boolean(openCategories[key]);
-            const Icon = CATEGORY_ICONS[section.id];
-            return (
-              <section key={key} className="pack-section">
+      <h3 className="pack-suggestions__heading">Suggested items</h3>
+      {activeCategories.length > 0 && selectedCategory ? (
+        <>
+          <div
+            ref={tabsRef}
+            className="pack-tabs"
+            role="tablist"
+            aria-label="Gear categories"
+          >
+            {activeCategories.map((section) => {
+              const Icon = CATEGORY_ICONS[section.id];
+              const selected = section.id === selectedCategory.id;
+              return (
                 <button
+                  key={section.id}
                   type="button"
+                  role="tab"
+                  id={`pack-tab-${section.id}`}
+                  aria-selected={selected}
+                  aria-controls={`pack-panel-${section.id}`}
                   className={[
-                    "pack-section__toggle",
-                    isOpen ? "pack-section__toggle--open" : "",
+                    "pack-tabs__tab",
+                    selected ? "pack-tabs__tab--active" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  onClick={() => toggleCategory(key)}
-                  aria-expanded={isOpen}
+                  onClick={() => selectTab(section.id)}
                 >
-                  <span className="pack-section__leading">
-                    <Icon className="pack-section__icon" />
-                    <span className="pack-section__title">{section.label}</span>
-                    <span className="pack-section__count">{section.items.length}</span>
-                  </span>
-                  <ChevronDown className="pack-section__chevron" aria-hidden size={18} strokeWidth={1.75} />
+                  <Icon className="pack-tabs__icon" />
+                  <span>{TAB_LABELS[section.id]}</span>
+                  <span className="pack-tabs__count">{section.items.length}</span>
                 </button>
+              );
+            })}
+          </div>
 
-                <div
-                  className={[
-                    "pack-section__body",
-                    isOpen ? "pack-section__body--open" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                  aria-hidden={!isOpen}
-                >
-                  <ul className="pack-suggestions__list">
-                    {section.items.map((item) => (
-                      <SuggestionRow
-                        key={item.id}
-                        item={item}
-                        isOpen={Boolean(expanded[item.id])}
-                        state={itemState[item.id]}
-                        onToggle={() => toggle(item.id, item.title)}
-                        onMarkOwned={() => markOwned(item.id)}
-                        onRetry={() => loadProducts(item.id, item.title)}
-                        onSave={(product) =>
-                          add({
-                            name: product.name,
-                            imageUrl: product.imageUrl,
-                            categoryTitle: `${item.categoryLabel} · ${item.title}`,
-                            sourceUrl: product.sourceUrl,
-                          })
-                        }
-                        isSaved={isSaved}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              </section>
-            );
-          })}
-        </div>
+          <div
+            className="pack-tabs__panel"
+            role="tabpanel"
+            id={`pack-panel-${selectedCategory.id}`}
+            aria-labelledby={`pack-tab-${selectedCategory.id}`}
+          >
+            <ul className="pack-suggestions__list">
+              {selectedCategory.items.map((item) => (
+                <SuggestionRow
+                  key={item.id}
+                  item={item}
+                  isOpen={Boolean(expanded[item.id])}
+                  state={itemState[item.id]}
+                  onToggle={() => toggle(item.id, item.title)}
+                  onMarkOwned={() => markOwned(item.id)}
+                  onRetry={() => loadProducts(item.id, item.title)}
+                  onSave={(product) =>
+                    add({
+                      name: product.name,
+                      imageUrl: product.imageUrl,
+                      categoryTitle: `${item.categoryLabel} · ${item.title}`,
+                      sourceUrl: product.sourceUrl,
+                    })
+                  }
+                  isSaved={isSaved}
+                />
+              ))}
+            </ul>
+          </div>
+        </>
       ) : (
         <p className="pack-suggestions__all-owned">
           All items marked as owned — open below to review or add any back.
@@ -237,12 +299,12 @@ export function SuggestionItems({
                     </span>
                     <button
                       type="button"
-                      className="pack-suggestions__restore"
+                      className="pack-suggestions__trailing-btn pack-suggestions__restore"
                       onClick={() => restoreOwned(item.id)}
                       aria-label={`Move ${item.title} back to suggestions`}
                       title="Add back to list"
                     >
-                      <UndoIcon />
+                      <RotateCcw size={16} strokeWidth={1.75} aria-hidden />
                     </button>
                   </div>
                 </li>
@@ -253,10 +315,6 @@ export function SuggestionItems({
       )}
     </div>
   );
-}
-
-function sectionKey(section: SuggestionCategory): string {
-  return `${section.id}:${section.label}`;
 }
 
 type SuggestionRowProps = {
@@ -290,20 +348,33 @@ function SuggestionRow({
   return (
     <li className="pack-suggestions__item">
       <div className="pack-suggestions__row">
-        <span className="pack-suggestions__title">{item.title}</span>
         <button
           type="button"
           className="pack-suggestions__owned-btn"
           onClick={onMarkOwned}
           aria-label={`Mark ${item.title} as already owned`}
-          title="Already have this"
+          title="I already have this"
         >
-          <CheckIcon />
-          <span>Owned</span>
+          <CircleMinus size={16} strokeWidth={1.75} aria-hidden />
         </button>
         <button
           type="button"
           className={[
+            "pack-suggestions__main",
+            isOpen ? "pack-suggestions__main--open" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          onClick={onToggle}
+          aria-expanded={isOpen}
+          aria-label={`${isOpen ? "Hide" : "Show"} details for ${item.title}`}
+        >
+          <span className="pack-suggestions__title">{item.title}</span>
+        </button>
+        <button
+          type="button"
+          className={[
+            "pack-suggestions__trailing-btn",
             "pack-suggestions__expand",
             isOpen ? "pack-suggestions__expand--open" : "",
           ]
@@ -311,7 +382,8 @@ function SuggestionRow({
             .join(" ")}
           onClick={onToggle}
           aria-expanded={isOpen}
-          aria-label={`${isOpen ? "Hide" : "Show"} product options for ${item.title}`}
+          aria-label={`${isOpen ? "Hide" : "Show"} details for ${item.title}`}
+          tabIndex={-1}
         >
           <ChevronDownIcon />
         </button>

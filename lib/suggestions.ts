@@ -8,6 +8,8 @@ export type SuggestionCategoryId =
 export type PackSuggestion = {
   id: string;
   title: string;
+  /** Optional short trait line shown under the title. */
+  description?: string;
   categoryId: SuggestionCategoryId;
   categoryLabel: string;
 };
@@ -39,6 +41,21 @@ function cleanItem(raw: string): string {
     .replace(/\*\*/g, "")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .trim();
+}
+
+/** Split "Name — detail", "Name – detail", "Name - detail", or "Name: detail". */
+export function splitItemLabel(raw: string): {
+  title: string;
+  description?: string;
+} {
+  const cleaned = cleanItem(raw);
+  const match = cleaned.match(/^(.+?)\s*(?:[—–]|[:]| - )\s+(.+)$/);
+  if (!match) return { title: cleaned };
+
+  const title = match[1].trim();
+  const description = match[2].trim();
+  if (!title || !description) return { title: cleaned };
+  return { title, description };
 }
 
 const BULLET_RE = /^\s*(?:[-*•]|\d+[.)])\s+(.+)/;
@@ -215,12 +232,13 @@ export function splitAssistantContent(content: string): {
     const bullet = line.match(BULLET_RE);
     if (bullet) {
       inList = true;
-      const title = cleanItem(bullet[1]);
+      const { title, description } = splitItemLabel(bullet[1]);
       if (title) {
         const resolved = resolveItemCategory(title, currentCategoryId);
         suggestions.push({
           id: `item-${itemIndex}-${slugify(title)}`,
           title,
+          description,
           categoryId: resolved.id,
           categoryLabel: resolved.label,
         });

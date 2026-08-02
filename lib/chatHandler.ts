@@ -5,11 +5,12 @@ import {
   isResponseOnTopic,
   REFUSAL_MESSAGE,
 } from "./guardrails.js";
-import { fetchWeather } from "./weather.js";
+import { fetchWeather, type WeatherResult } from "./weather.js";
 import {
+  guessMonthsFromMessage,
   guessPlaceFromMessage,
-  messageHintsWeather,
   messageHintsWeb,
+  messageNeedsClimateFirst,
   REASONING,
   type ReasoningStatus,
 } from "./reasoning.js";
@@ -33,26 +34,40 @@ If a question is off-topic, reply briefly:
 Never act as a general-purpose assistant.
 
 Tools (only for in-scope travel/packing questions):
-- get_weather: ALWAYS use for temperature, rain, wind, humidity, or forecast. Open-Meteo live data.
-  For mountains/hiking, pass elevation_m and/or coordinates when known. Never guess temperatures.
+- get_weather: ALWAYS use for temperature, rain, wind, humidity, forecast, or packing-by-season.
+  Live fields are "right now + 5 days" only — never describe them as October/February trip weather.
+  When the user names travel months/seasons, pass months as calendar numbers (1–12), e.g. October+February → [10, 2].
+  Use the returned months[] climate normals for packing advice about those travel dates.
+  For mountains/hiking, pass elevation_m and/or coordinates when known (Everest base camp ~5364m). Never guess temperatures.
 - web_search: news, events, store hours, gear releases — NOT for weather.
 
-Be honest when you lack live product prices or stock. Keep replies short and scannable unless asked for detail.
+Never narrate tool use. Do not say you will check the weather, look something up, or "hang on" before calling a tool — call the tool with no preamble, then write the user-facing answer after results return.
 
-When listing gear to pack, use a short intro paragraph (2–3 sentences max), then organize items into these category headings with dash bullets under each:
+Be honest when you lack live product prices or stock. Default to a quick guide — short over thorough unless the user asks for detail.
+
+Formatting (the UI renders this):
+- Lead with 1 short sentence (or 2 max). No essay.
+- Then dash bullets under only the categories that matter. Skip empty categories.
+- Use **double asterisks** for a short emphasized phrase only.
+- Prefer bullets over paragraphs for packing advice. Weather details belong in the widget — do not restate full temp tables in prose.
+
+When listing gear, use these headings with short bullets. Format each bullet as:
+- Product name: one short trait
+Example: - Hardshell jacket: waterproof hood, taped seams
+Never use em dashes (—) in bullets. Keep the name short; put detail after the colon.
 
 Top layer:
-- item
+- item: trait
 Bottom layer:
-- item
+- item: trait
 Accessories:
-- item
+- item: trait
 Gear:
-- item
+- item: trait
 
-Only include categories that apply. Keep each bullet to a short product name (no long descriptions). Do not put packing items in the intro paragraph.
-Every item MUST go under Top layer, Bottom layer, Accessories, or Gear — never a catch-all like "More items" or "Other".
-Jackets, fleeces, shirts, and base/mid layers → Top layer. Pants, leggings, shorts → Bottom layer. Gloves, hats, socks, scarves → Accessories. Packs, bottles, poles, tents → Gear.`;
+Cap each category at 4 bullets unless asked for a full expedition list. Do not put packing items in the intro.
+Every item MUST go under Top layer, Bottom layer, Accessories, or Gear — never "More items" or "Other".
+Jackets, fleeces, shirts, base/mid layers → Top layer. Pants, leggings, shorts → Bottom layer. Gloves, hats, socks, scarves → Accessories. Packs, bottles, poles, tents → Gear.`;
 
 /** Plain chat — no subject guardrails, no tools. Set RECORDING_MODE=true in .env.local */
 const RECORDING_SYSTEM_PROMPT = `You are a helpful assistant. Answer naturally and conversationally.`;
@@ -73,18 +88,18 @@ export const WEB_SEARCH_TOOL = {
 export const GET_WEATHER_TOOL: Anthropic.Tool = {
   name: "get_weather",
   description:
-    "Get live outdoor weather and 5-day forecast from Open-Meteo. Supports places, coordinates, and mountain elevation (meters). Required for any weather or hiking packing question.",
+    "Get Open-Meteo weather: always returns live now + 5-day forecast. When months[] is set, also returns multi-year climate normals for those travel months. Required for weather or hiking packing questions.",
   input_schema: {
     type: "object",
     properties: {
       place_name: {
         type: "string",
         description:
-          "Place to search: city, trail, mountain, park, e.g. Mount Fuji, Yosemite Valley, Chamonix",
+          "Place to search: city, trail, mountain, park, e.g. Mount Everest, Yosemite Valley, Chamonix",
       },
       country_code: {
         type: "string",
-        description: "Optional ISO country code to disambiguate, e.g. JP, US, FR",
+        description: "Optional ISO country code to disambiguate, e.g. JP, US, FR, NP",
       },
       latitude: {
         type: "number",
@@ -99,13 +114,21 @@ export const GET_WEATHER_TOOL: Anthropic.Tool = {
         description:
           "Elevation in meters above sea level — use for summits/trail height (Open-Meteo downscales to this altitude)",
       },
+      months: {
+        type: "array",
+        items: { type: "integer", minimum: 1, maximum: 12 },
+        description:
+          "Travel months as 1–12. Pass whenever the user names months/seasons (e.g. October and February → [10, 2]). Omit only for live/current questions.",
+      },
     },
   },
 };
 
 export type ChatStreamEvent =
   | { type: "text"; text: string }
-  | { type: "status"; status: ReasoningStatus };
+  | { type: "text_clear" }
+  | { type: "status"; status: ReasoningStatus }
+  | { type: "weather"; weather: WeatherResult };
 
 export type ChatStreamHandler = (event: ChatStreamEvent) => void;
 
@@ -117,6 +140,10 @@ function emitText(handler: ChatStreamHandler, text: string) {
   handler({ type: "text", text });
 }
 
+function emitWeather(handler: ChatStreamHandler, weather: WeatherResult) {
+  handler({ type: "weather", weather });
+}
+
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
@@ -124,7 +151,8 @@ export type ChatMessage = {
 
 function buildInitialReasoning(userMessage: string): ReasoningStatus {
   const place = guessPlaceFromMessage(userMessage);
-  if (messageHintsWeather(userMessage)) {
+  // Climate before layers: packing answers need weather/season context first.
+  if (messageNeedsClimateFirst(userMessage)) {
     return REASONING.checkingWeather(place);
   }
   if (messageHintsWeb(userMessage)) {
@@ -164,13 +192,34 @@ function parsePlaceFromToolInput(inputJson: string): string | undefined {
   }
 }
 
-async function runWeatherTool(input: unknown): Promise<string> {
+function lastUserText(messages: Anthropic.MessageParam[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg.role !== "user") continue;
+    if (typeof msg.content === "string") return msg.content;
+    if (Array.isArray(msg.content)) {
+      return msg.content
+        .filter(
+          (block): block is Anthropic.TextBlockParam => block.type === "text"
+        )
+        .map((block) => block.text)
+        .join("\n");
+    }
+  }
+  return "";
+}
+
+async function runWeatherTool(
+  input: unknown,
+  fallbackMonths: number[] = []
+): Promise<string> {
   const parsed = input as {
     place_name?: string;
     country_code?: string;
     latitude?: number;
     longitude?: number;
     elevation_m?: number;
+    months?: number[];
   };
 
   const hasCoords =
@@ -185,13 +234,24 @@ async function runWeatherTool(input: unknown): Promise<string> {
     });
   }
 
+  const months =
+    parsed.months && parsed.months.length > 0
+      ? parsed.months
+      : fallbackMonths;
+
+  // Prefer Nepal for Everest when the model omits country.
+  const country_code =
+    parsed.country_code ||
+    (/everest/i.test(parsed.place_name ?? "") ? "NP" : undefined);
+
   try {
     const data = await fetchWeather({
       place_name: parsed.place_name,
-      country_code: parsed.country_code,
+      country_code,
       latitude: parsed.latitude,
       longitude: parsed.longitude,
       elevation_m: parsed.elevation_m,
+      months,
     });
     return JSON.stringify(data);
   } catch (err) {
@@ -232,14 +292,26 @@ async function streamWithTools(
   onEvent: ChatStreamHandler
 ): Promise<void> {
   let conversationMessages = messages;
+  const inferredMonths = guessMonthsFromMessage(lastUserText(messages));
 
   const tools: Anthropic.Messages.Tool[] = [
     WEB_SEARCH_TOOL,
     GET_WEATHER_TOOL,
   ];
 
+  let afterToolRound = false;
+
   while (true) {
     const toolInputs = new Map<number, string>();
+    // Drop any "I'll check the weather…" preamble from the UI when tools run.
+    let suppressText = false;
+    let emittedText = false;
+
+    // Weather/tools first, then layers, then the written answer.
+    if (afterToolRound) {
+      emitStatus(onEvent, REASONING.packingAnswer());
+      afterToolRound = false;
+    }
 
     const stream = client.messages.stream({
       model: CHAT_MODEL,
@@ -253,6 +325,11 @@ async function streamWithTools(
       if (event.type === "content_block_start") {
         const block = event.content_block;
         if (block.type === "tool_use") {
+          suppressText = true;
+          if (emittedText) {
+            onEvent({ type: "text_clear" });
+            emittedText = false;
+          }
           if (block.name === "get_weather") {
             emitStatus(onEvent, REASONING.checkingWeather());
           } else if (block.name === "web_search") {
@@ -273,7 +350,10 @@ async function streamWithTools(
         event.type === "content_block_delta" &&
         event.delta.type === "text_delta"
       ) {
-        emitText(onEvent, event.delta.text);
+        if (!suppressText) {
+          emitText(onEvent, event.delta.text);
+          emittedText = true;
+        }
       }
     }
 
@@ -294,17 +374,30 @@ async function streamWithTools(
             [...toolInputs.values()].join("") || JSON.stringify(toolUse.input)
           );
         emitStatus(onEvent, REASONING.checkingWeather(place));
+        const content = await runWeatherTool(toolUse.input, inferredMonths);
+        try {
+          const parsed = JSON.parse(content) as WeatherResult & {
+            error?: string;
+          };
+          if (!parsed.error && parsed.current && parsed.location) {
+            emitWeather(onEvent, parsed);
+          }
+        } catch {
+          /* ignore malformed tool payload */
+        }
         toolResults.push({
           type: "tool_result",
           tool_use_id: toolUse.id,
-          content: await runWeatherTool(toolUse.input),
+          content,
         });
       }
     }
 
     if (toolResults.length === 0) break;
 
-    emitStatus(onEvent, REASONING.packingAnswer());
+    // Climate is in; next step is layer matching before the final answer streams.
+    emitStatus(onEvent, REASONING.matchingLayers());
+    afterToolRound = true;
 
     conversationMessages = [
       ...conversationMessages,
@@ -329,6 +422,8 @@ async function streamGuardedChat(
   const captureEvent: ChatStreamHandler = (event) => {
     if (event.type === "text") {
       fullResponse += event.text;
+    } else if (event.type === "text_clear") {
+      fullResponse = "";
     }
     onEvent(event);
   };

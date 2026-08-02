@@ -32,6 +32,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           res.write(`data: ${JSON.stringify({ status: event.status })}\n\n`);
           return;
         }
+        if (event.type === "weather") {
+          res.write(`data: ${JSON.stringify({ weather: event.weather })}\n\n`);
+          return;
+        }
+        if (event.type === "text_clear") {
+          res.write(`data: ${JSON.stringify({ text_clear: true })}\n\n`);
+          return;
+        }
         res.write(`data: ${JSON.stringify({ text: event.text })}\n\n`);
       },
       {
