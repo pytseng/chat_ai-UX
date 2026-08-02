@@ -25,13 +25,13 @@ const SUGGESTIONS_NOW = [
   "Ski tour Chamonix today?",
 ] as const;
 
-/** Near-term date range (~2–3 weeks out). */
+/** Trip length / duration (hard packing call for multi-day journeys). */
 const SUGGESTIONS_NEAR = [
-  "Patagonia trek in 20 days?",
-  "Canyoneer Zion in 2 weeks?",
-  "Grand Canyon rafting in 18 days?",
-  "Banff ice climb in 3 weeks?",
-  "Vietnam moto trip in 20 days?",
+  "20-day Patagonia trek?",
+  "2-week Zion canyoneering trip?",
+  "18-day Grand Canyon raft?",
+  "3-week Banff ice climb?",
+  "20-day Vietnam moto trip?",
 ] as const;
 
 /** Further-out season, month, or specific later timing. */
@@ -64,7 +64,7 @@ function pickOne<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]!;
 }
 
-/** Always one now, one near range, one further timing. */
+/** Always one now, one trip-duration, one further season/month. */
 function pickRandomSuggestions(): string[] {
   return [pickOne(SUGGESTIONS_NOW), pickOne(SUGGESTIONS_NEAR), pickOne(SUGGESTIONS_LATER)];
 }

@@ -47,7 +47,7 @@ const PLACE_HINT =
   /\b(maui|patagonia|kilimanjaro|iceland|banff|yosemite|chamonix|nepal|alaska|antarctica|zion|andes|interlaken|sahara|everest|torres del paine|portugal|vietnam|costa rica|grand canyon|barrier reef|tarifa|japan|mexico|bali|alps)\b/i;
 
 const TIME_HINT =
-  /\b(right now|today|this weekend|next month|next (winter|spring|summer|fall|autumn|march|april)|this (winter|spring|summer|fall|autumn)|in \d+\s*(days?|weeks?)|in (jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|sept|september|oct|october|nov|november|dec|december)|dry season)\b/i;
+  /\b(right now|today|this weekend|next month|next (winter|spring|summer|fall|autumn|march|april)|this (winter|spring|summer|fall|autumn)|\d+-?(day|week)s?|\d+\s*(day|week)s?|in \d+\s*(days?|weeks?)|in (jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|sept|september|oct|october|nov|november|dec|december)|dry season)\b/i;
 
 const GREETING_PATTERN = /^(hi|hello|hey|yo|help|thanks|thank you)[!.?\s]*$/i;
 
