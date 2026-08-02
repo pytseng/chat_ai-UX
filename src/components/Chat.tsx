@@ -222,11 +222,15 @@ export function MessageList({
   onPreferencesSubmit,
   preferences = null,
 }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const starterPrompts = useMemo(() => pickRandomSuggestions(), []);
 
+  // Scroll only the messages panel — never scrollIntoView (that also scrolls
+  // parent pages when SecretStash is embedded in an iframe).
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const list = listRef.current;
+    if (!list) return;
+    list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
   }, [messages, streamingId, reasoningSteps, error]);
 
   const streamingMessage = streamingId
@@ -238,7 +242,7 @@ export function MessageList({
     !streamingMessage?.content;
 
   return (
-    <div className="messages">
+    <div ref={listRef} className="messages">
       {messages.length === 0 && !error && (
         <div className="messages__empty-state">
           <p className="messages__empty">
@@ -349,7 +353,6 @@ export function MessageList({
         <PreferencePrompt onSubmit={onPreferencesSubmit} />
       )}
       {error && <div className="message message--error">{error}</div>}
-      <div ref={bottomRef} />
     </div>
   );
 }
