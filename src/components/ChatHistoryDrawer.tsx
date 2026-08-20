@@ -317,7 +317,7 @@ export function ChatHistoryDrawer({
                 <span className="chat-drawer__account-avatar" aria-hidden>
                   <img
                     className="chat-drawer__account-avatar-img"
-                    src="/mock-avatar.svg"
+                    src="/mock-avatar.png"
                     alt=""
                     width={32}
                     height={32}

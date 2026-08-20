@@ -270,3 +270,47 @@ export function GlovesIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+/** 2×2 grid — inventory / loadout */
+export function InventoryIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect
+        x="3"
+        y="3"
+        width="8"
+        height="8"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <rect
+        x="13"
+        y="3"
+        width="8"
+        height="8"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <rect
+        x="3"
+        y="13"
+        width="8"
+        height="8"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <rect
+        x="13"
+        y="13"
+        width="8"
+        height="8"
+        rx="1.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}

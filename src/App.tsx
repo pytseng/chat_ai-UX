@@ -3,7 +3,8 @@ import { streamChat, type Message, type ReasoningStatus } from "./api/chat";
 import { ChatHistoryDrawer } from "./components/ChatHistoryDrawer";
 import { ChatInput, MessageList } from "./components/Chat";
 import { LiquidBackground } from "./components/LiquidBackground";
-import { MenuIcon, ChestIcon } from "./components/Icons";
+import { MenuIcon, ChestIcon, InventoryIcon } from "./components/Icons";
+import { InventoryPanel } from "./components/InventoryPanel";
 import { SavedStashPanel } from "./components/SavedStashPanel";
 import { useChatHistory } from "./hooks/useChatHistory";
 import { useSavedProducts } from "./hooks/useSavedProducts";
@@ -43,6 +44,7 @@ export default function App() {
   const [reasoningSteps, setReasoningSteps] = useState<ReasoningStatus[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [stashOpen, setStashOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [preferences, setPreferences] = useState<UserPreferences | null>(() =>
     loadUserPreferences()
@@ -265,21 +267,34 @@ export default function App() {
               SecretStash
             </button>
           </div>
-          <button
-            type="button"
-            className="header__stash-btn"
-            onClick={() => setStashOpen(true)}
-            aria-label={
-              count > 0
-                ? `Open saved stash, ${count} items`
-                : "Open saved stash"
-            }
-          >
-            <ChestIcon />
-            {count > 0 ? (
-              <span className="header__stash-badge">{count > 99 ? "99+" : count}</span>
-            ) : null}
-          </button>
+          <div className="header__trailing">
+            <button
+              type="button"
+              className="header__icon-btn"
+              onClick={() => setStashOpen(true)}
+              aria-label={
+                count > 0
+                  ? `Open saved stash, ${count} items`
+                  : "Open saved stash"
+              }
+            >
+              <ChestIcon />
+              {count > 0 ? (
+                <span className="header__stash-badge">
+                  {count > 99 ? "99+" : count}
+                </span>
+              ) : null}
+            </button>
+            <button
+              type="button"
+              className="header__icon-btn"
+              onClick={() => setInventoryOpen(true)}
+              aria-label="Open inventory"
+              aria-expanded={inventoryOpen}
+            >
+              <InventoryIcon />
+            </button>
+          </div>
         </header>
 
         <MessageList
@@ -301,6 +316,11 @@ export default function App() {
           onStop={stopGeneration}
           isGenerating={isLoading}
           disabled={awaitingPreferences}
+        />
+
+        <InventoryPanel
+          open={inventoryOpen}
+          onClose={() => setInventoryOpen(false)}
         />
 
         <SavedStashPanel
