@@ -63,11 +63,25 @@ export function useSavedProducts() {
     [saved]
   );
 
+  const removeByProduct = useCallback(
+    (name: string, imageUrl: string) => {
+      const id = makeSavedProductId(name, imageUrl);
+      setSnapshot(saved.filter((item) => item.id !== id));
+    },
+    [saved]
+  );
+
+  const clear = useCallback(() => {
+    setSnapshot([]);
+  }, []);
+
   return {
     saved,
     count: saved.length,
     add,
     remove,
+    removeByProduct,
+    clear,
     isSaved,
   };
 }

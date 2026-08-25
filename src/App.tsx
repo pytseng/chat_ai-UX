@@ -3,7 +3,7 @@ import { streamChat, type Message, type ReasoningStatus } from "./api/chat";
 import { ChatHistoryDrawer } from "./components/ChatHistoryDrawer";
 import { ChatInput, MessageList } from "./components/Chat";
 import { LiquidBackground } from "./components/LiquidBackground";
-import { MenuIcon, ChestIcon, InventoryIcon } from "./components/Icons";
+import { MenuIcon, ChestIcon } from "./components/Icons";
 import { InventoryPanel } from "./components/InventoryPanel";
 import { SavedStashPanel } from "./components/SavedStashPanel";
 import { useChatHistory } from "./hooks/useChatHistory";
@@ -50,7 +50,7 @@ export default function App() {
     loadUserPreferences()
   );
   const [awaitingPreferences, setAwaitingPreferences] = useState(false);
-  const { saved, count, remove } = useSavedProducts();
+  const { saved, count, remove, clear } = useSavedProducts();
 
   const runAssistant = useCallback(
     async (
@@ -217,6 +217,8 @@ export default function App() {
     [sendMessage]
   );
 
+  /** The cart belongs to the search that produced it, so leaving a
+   *  conversation empties it rather than carrying items into the next trip. */
   const handleNewChat = useCallback(() => {
     abortRef.current?.abort();
     setInput("");
@@ -225,9 +227,11 @@ export default function App() {
     setStreamingId(null);
     setIsLoading(false);
     setDrawerOpen(false);
+    setStashOpen(false);
     setAwaitingPreferences(false);
     startNewChat();
-  }, [startNewChat]);
+    clear();
+  }, [clear, startNewChat]);
 
   const handleOpenChat = useCallback(
     (id: string) => {
@@ -238,10 +242,23 @@ export default function App() {
       setReasoningSteps([]);
       setStreamingId(null);
       setIsLoading(false);
+      setStashOpen(false);
       setAwaitingPreferences(false);
       openChat(id);
+      clear();
     },
-    [activeId, openChat]
+    [activeId, clear, openChat]
+  );
+
+  const handleDeleteChat = useCallback(
+    (id: string) => {
+      deleteChat(id);
+      if (id === activeId) {
+        setStashOpen(false);
+        clear();
+      }
+    },
+    [activeId, clear, deleteChat]
   );
 
   return (
@@ -271,28 +288,11 @@ export default function App() {
             <button
               type="button"
               className="header__icon-btn"
-              onClick={() => setStashOpen(true)}
-              aria-label={
-                count > 0
-                  ? `Open saved stash, ${count} items`
-                  : "Open saved stash"
-              }
-            >
-              <ChestIcon />
-              {count > 0 ? (
-                <span className="header__stash-badge">
-                  {count > 99 ? "99+" : count}
-                </span>
-              ) : null}
-            </button>
-            <button
-              type="button"
-              className="header__icon-btn"
               onClick={() => setInventoryOpen(true)}
               aria-label="Open inventory"
               aria-expanded={inventoryOpen}
             >
-              <InventoryIcon />
+              <ChestIcon />
             </button>
           </div>
         </header>
@@ -316,6 +316,14 @@ export default function App() {
           onStop={stopGeneration}
           isGenerating={isLoading}
           disabled={awaitingPreferences}
+          cart={
+            count > 0
+              ? {
+                  count,
+                  onOpen: () => setStashOpen(true),
+                }
+              : undefined
+          }
         />
 
         <InventoryPanel
@@ -328,6 +336,7 @@ export default function App() {
           items={saved}
           onClose={() => setStashOpen(false)}
           onRemove={remove}
+          onClear={clear}
         />
 
         <ChatHistoryDrawer
@@ -338,7 +347,7 @@ export default function App() {
           onClose={() => setDrawerOpen(false)}
           onNewChat={handleNewChat}
           onOpenChat={handleOpenChat}
-          onDeleteChat={deleteChat}
+          onDeleteChat={handleDeleteChat}
           onSavePreferences={handlePreferencesSave}
         />
       </div>

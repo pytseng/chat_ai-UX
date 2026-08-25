@@ -1,46 +1,47 @@
 import type { ListInventoryItem } from "./listInventoryStorage";
 
 export type GameSlotId =
-  | "headGear"
+  | "innerwear"
+  | "footwear"
   | "top"
   | "bottom"
-  | "backpack"
-  | "footwear"
-  | "innerwear"
+  | "gear"
+  | "accessories"
   | "other";
 
 export const GAME_SLOT_LABELS: Record<GameSlotId, string> = {
-  headGear: "Head gear",
+  innerwear: "Innerwear",
+  footwear: "Footwear",
   top: "Top",
   bottom: "Bottom",
-  backpack: "Backpack",
-  footwear: "Footwear",
-  innerwear: "Innerwear",
+  gear: "Gear",
+  accessories: "Accessories",
   other: "Other",
 };
 
+/** Reading order of the loadout grid: left column, centre column, right column. */
 export const GAME_SLOTS: GameSlotId[] = [
-  "other",
   "innerwear",
-  "headGear",
+  "footwear",
   "top",
   "bottom",
-  "backpack",
-  "footwear",
+  "gear",
+  "accessories",
+  "other",
 ];
 
-const LOADOUT_KEY = "secretstash-game-loadout-v2";
+const LOADOUT_KEY = "secretstash-game-loadout-v3";
 
 export type GameLoadout = Record<GameSlotId, string[]>;
 
 export function emptyLoadout(): GameLoadout {
   return {
-    headGear: [],
+    innerwear: [],
+    footwear: [],
     top: [],
     bottom: [],
-    backpack: [],
-    footwear: [],
-    innerwear: [],
+    gear: [],
+    accessories: [],
     other: [],
   };
 }
@@ -79,14 +80,17 @@ export function slotForItem(item: ListInventoryItem): GameSlotId {
 
   if (item.category === "top") return "top";
   if (item.category === "bottom") return "bottom";
+  if (item.category === "footwear") return "footwear";
   if (item.category === "innerwear") return "innerwear";
+  if (item.category === "gear") return "gear";
   if (item.category === "other") return "other";
 
-  if (item.category === "gear") return "backpack";
-
   if (item.category === "accessories") {
-    if (/\b(boot|shoe|sandal|footwear|hiking boot)\b/.test(n)) return "footwear";
-    return "headGear";
+    // Legacy fallback: items saved before "footwear" became its own category.
+    if (/\b(boot|shoe|sandal|sneaker|trainer|footwear|slipper)s?\b/.test(n)) {
+      return "footwear";
+    }
+    return "accessories";
   }
 
   return "other";

@@ -56,18 +56,28 @@ When listing gear, use these headings with short bullets. Format each bullet as:
 Example: - Hardshell jacket: waterproof hood, taped seams
 Never use em dashes (—) in bullets. Keep the name short; put detail after the colon.
 
+The only valid headings are, in this order:
+
 Top layer:
 - item: trait
 Bottom layer:
+- item: trait
+Footwear:
+- item: trait
+Innerwear:
 - item: trait
 Accessories:
 - item: trait
 Gear:
 - item: trait
 
+Use ONLY the headings that the trip actually calls for, and omit the rest entirely. A beach weekend may need just Top layer, Bottom layer and Footwear. Never emit an empty heading, and never invent headings like "More items", "Other", "Clothing" or "Essentials".
+
+Routing: jackets, fleeces, shirts, mid and outer layers → Top layer. Pants, leggings, shorts → Bottom layer. Boots, shoes, sandals, trail runners → Footwear. Base layers, thermals, technical socks, sports bras → Innerwear. Gloves, hats, sunglasses, scarves, belts, watches → Accessories. Packs, bottles, poles, tents, headlamps → Gear.
+
 Cap each category at 4 bullets unless asked for a full expedition list. Do not put packing items in the intro.
-Every item MUST go under Top layer, Bottom layer, Accessories, or Gear — never "More items" or "Other".
-Jackets, fleeces, shirts, base/mid layers → Top layer. Pants, leggings, shorts → Bottom layer. Gloves, hats, socks, scarves → Accessories. Packs, bottles, poles, tents → Gear.`;
+
+Suggest only SPECIALISED kit where the choice actually matters — technical fabrics, weather protection, trip-specific gear. Never suggest generic basics the traveller obviously already owns: plain underwear, thongs, boxer briefs, cotton socks, plain t-shirts, pyjamas. Merino or synthetic base layers and technical socks are fine because the material matters; plain cotton equivalents are not.`;
 
 /** Plain chat — no subject guardrails, no tools. Set RECORDING_MODE=true in .env.local */
 const RECORDING_SYSTEM_PROMPT = `You are a helpful assistant. Answer naturally and conversationally.`;

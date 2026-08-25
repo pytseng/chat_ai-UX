@@ -6,7 +6,14 @@ import {
   useState,
   type ComponentType,
 } from "react";
-import { Backpack, CircleMinus, RotateCcw, Shirt } from "lucide-react";
+import {
+  Backpack,
+  CircleMinus,
+  Glasses,
+  Package,
+  RotateCcw,
+  Shirt,
+} from "lucide-react";
 import type {
   PackSuggestion,
   SuggestionCategoryId,
@@ -14,16 +21,19 @@ import type {
 import { groupSuggestionsByCategory } from "../../lib/suggestions";
 import { fetchProductImages } from "../api/productImages";
 import type { ImageSearchResult } from "../../lib/imageSearch";
+import { formatUsd } from "../lib/mockCheckout";
 import { useSavedProducts } from "../hooks/useSavedProducts";
 import {
   formatPreferencesForSearch,
   type UserPreferences,
 } from "../lib/userPreferences";
 import {
+  BootIcon,
   ChevronDownIcon,
-  GlovesIcon,
-  PantsIcon,
   PlusIcon,
+  MinusIcon,
+  TankTopIcon,
+  TrousersIcon,
 } from "./Icons";
 
 type SuggestionItemsProps = {
@@ -58,16 +68,20 @@ type CategoryIcon = ComponentType<{ className?: string }>;
 
 const CATEGORY_ICONS: Record<SuggestionCategoryId, CategoryIcon> = {
   top: ({ className }) => <Shirt className={className} strokeWidth={1.75} aria-hidden />,
-  bottom: ({ className }) => <PantsIcon className={className} />,
-  accessories: ({ className }) => <GlovesIcon className={className} />,
+  bottom: ({ className }) => <TrousersIcon className={className} strokeWidth={1.75} />,
+  footwear: ({ className }) => <BootIcon className={className} strokeWidth={1.75} />,
+  innerwear: ({ className }) => <TankTopIcon className={className} strokeWidth={1.75} />,
+  accessories: ({ className }) => <Glasses className={className} strokeWidth={1.75} aria-hidden />,
   gear: ({ className }) => <Backpack className={className} strokeWidth={1.75} aria-hidden />,
-  other: ({ className }) => <Backpack className={className} strokeWidth={1.75} aria-hidden />,
+  other: ({ className }) => <Package className={className} strokeWidth={1.75} aria-hidden />,
 };
 
 /** Short labels so tabs fit on a phone width. */
 const TAB_LABELS: Record<SuggestionCategoryId, string> = {
   top: "Top",
   bottom: "Bottom",
+  footwear: "Footwear",
+  innerwear: "Innerwear",
   accessories: "Accessories",
   gear: "Gear",
   other: "More",
@@ -82,7 +96,7 @@ export function SuggestionItems({
   const [ownedIds, setOwnedIds] = useState<Record<string, boolean>>({});
   const [ownedOpen, setOwnedOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<SuggestionCategoryId | null>(null);
-  const { add, isSaved } = useSavedProducts();
+  const { add, removeByProduct, isSaved } = useSavedProducts();
   const tabsRef = useRef<HTMLDivElement>(null);
   const tabAnchorTop = useRef<number | null>(null);
 
@@ -258,7 +272,11 @@ export function SuggestionItems({
                       imageUrl: product.imageUrl,
                       categoryTitle: `${item.categoryLabel} · ${item.title}`,
                       sourceUrl: product.sourceUrl,
+                      price: product.price,
                     })
+                  }
+                  onRemove={(product) =>
+                    removeByProduct(product.name, product.imageUrl)
                   }
                   isSaved={isSaved}
                 />
@@ -325,6 +343,7 @@ type SuggestionRowProps = {
   onMarkOwned: () => void;
   onRetry: () => void;
   onSave: (product: ImageSearchResult) => void;
+  onRemove: (product: ImageSearchResult) => void;
   isSaved: (name: string, imageUrl: string) => boolean;
 };
 
@@ -336,6 +355,7 @@ function SuggestionRow({
   onMarkOwned,
   onRetry,
   onSave,
+  onRemove,
   isSaved,
 }: SuggestionRowProps) {
   const products = state?.products ?? [];
@@ -406,6 +426,7 @@ function SuggestionRow({
               products={products}
               onRetry={onRetry}
               onSave={onSave}
+              onRemove={onRemove}
               isSaved={isSaved}
             />
           ) : null}
@@ -421,6 +442,7 @@ type SuggestionProductsProps = {
   products: ImageSearchResult[];
   onRetry: () => void;
   onSave: (product: ImageSearchResult) => void;
+  onRemove: (product: ImageSearchResult) => void;
   isSaved: (name: string, imageUrl: string) => boolean;
 };
 
@@ -428,10 +450,12 @@ function ProductThumb({
   product,
   saved,
   onSave,
+  onRemove,
 }: {
   product: ImageSearchResult;
   saved: boolean;
   onSave: () => void;
+  onRemove: () => void;
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -459,19 +483,25 @@ function ProductThumb({
           ]
             .filter(Boolean)
             .join(" ")}
-          onClick={onSave}
-          disabled={saved}
+          onClick={saved ? onRemove : onSave}
           aria-label={
             saved
-              ? `${product.name} already in stash`
-              : `Save ${product.name} to stash`
+              ? `Remove ${product.name} from cart`
+              : `Save ${product.name} to cart`
           }
-          title={saved ? "Saved" : "Add to stash"}
+          title={saved ? "Remove from cart" : "Add to cart"}
         >
-          <PlusIcon />
+          {saved ? <MinusIcon /> : <PlusIcon />}
         </button>
       </div>
-      <figcaption>{product.name}</figcaption>
+      <figcaption>
+        {product.name}
+        {typeof product.price === "number" ? (
+          <span className="pack-suggestions__price">
+            {formatUsd(product.price)}
+          </span>
+        ) : null}
+      </figcaption>
     </figure>
   );
 }
@@ -482,6 +512,7 @@ function SuggestionProducts({
   products,
   onRetry,
   onSave,
+  onRemove,
   isSaved,
 }: SuggestionProductsProps) {
   if (loading) {
@@ -524,6 +555,7 @@ function SuggestionProducts({
             product={product}
             saved={saved}
             onSave={() => onSave(product)}
+            onRemove={() => onRemove(product)}
           />
         );
       })}

@@ -10,6 +10,7 @@ import { WeatherWidget } from "./WeatherWidget";
 import type { UserPreferences } from "../lib/userPreferences";
 import {
   ArrowUpIcon,
+  CartIcon,
   CodeIcon,
   ImageIcon,
   MicIcon,
@@ -76,6 +77,10 @@ type ChatInputProps = {
   onStop?: () => void;
   isGenerating?: boolean;
   disabled?: boolean;
+  cart?: {
+    count: number;
+    onOpen: () => void;
+  };
 };
 
 export function ChatInput({
@@ -85,6 +90,7 @@ export function ChatInput({
   onStop,
   isGenerating = false,
   disabled = false,
+  cart,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const canSend = value.trim().length > 0 && !isGenerating && !disabled;
@@ -105,6 +111,24 @@ export function ChatInput({
 
   return (
     <div className="input-area">
+      {cart ? (
+        <div className="input-area__cart">
+          <button
+            type="button"
+            className="cart-btn"
+            onClick={cart.onOpen}
+            aria-label={`Open cart, ${cart.count} ${
+              cart.count === 1 ? "item" : "items"
+            }`}
+          >
+            <CartIcon />
+            <span className="cart-btn__label">Cart</span>
+            <span className="cart-btn__badge">
+              {cart.count > 99 ? "99+" : cart.count}
+            </span>
+          </button>
+        </div>
+      ) : null}
       <div className="chat-box">
         <textarea
           ref={textareaRef}

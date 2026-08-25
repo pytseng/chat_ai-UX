@@ -1,6 +1,9 @@
+/** Mirrors ListInventoryCategory in src/lib/listInventoryStorage.ts. */
 export type SuggestionCategoryId =
   | "top"
   | "bottom"
+  | "footwear"
+  | "innerwear"
   | "accessories"
   | "gear"
   | "other";
@@ -23,6 +26,8 @@ export type SuggestionCategory = {
 export const CATEGORY_ORDER: SuggestionCategoryId[] = [
   "top",
   "bottom",
+  "footwear",
+  "innerwear",
   "accessories",
   "gear",
   "other",
@@ -31,6 +36,8 @@ export const CATEGORY_ORDER: SuggestionCategoryId[] = [
 const CATEGORY_LABELS: Record<SuggestionCategoryId, string> = {
   top: "Top layer",
   bottom: "Bottom layer",
+  footwear: "Footwear",
+  innerwear: "Innerwear",
   accessories: "Accessories",
   gear: "Gear",
   other: "More items",
@@ -75,14 +82,38 @@ export function matchCategoryId(heading: string): SuggestionCategoryId | null {
   const key = normalizeCategoryKey(heading);
   if (!key) return null;
 
+  // Footwear and innerwear first — "base layer" must not fall through to "top"
+  if (
+    key === "footwear" ||
+    key === "shoes" ||
+    key === "boots" ||
+    key === "shoes and boots" ||
+    key === "boots and shoes" ||
+    key.includes("footwear")
+  ) {
+    return "footwear";
+  }
+  if (
+    key === "innerwear" ||
+    key === "underlayer" ||
+    key === "base layer" ||
+    key === "base layers" ||
+    key === "baselayer" ||
+    key === "baselayers" ||
+    key === "thermals" ||
+    key === "socks" ||
+    key.includes("innerwear") ||
+    key.includes("base layer") ||
+    key.includes("next to skin")
+  ) {
+    return "innerwear";
+  }
   if (
     key === "top" ||
     key === "top layer" ||
     key === "tops" ||
     key === "upper" ||
     key === "upper layer" ||
-    key === "base layer" ||
-    key === "base layers" ||
     key === "mid layer" ||
     key === "mid layers" ||
     key === "midlayer" ||
@@ -91,7 +122,6 @@ export function matchCategoryId(heading: string): SuggestionCategoryId | null {
     key === "jackets" ||
     key === "layers" ||
     key.includes("top layer") ||
-    key.includes("base layer") ||
     key.includes("mid layer") ||
     key.includes("outer layer") ||
     key.startsWith("top ")
@@ -132,12 +162,21 @@ export function matchCategoryId(heading: string): SuggestionCategoryId | null {
 
 /**
  * Infer category from product title when heading is missing/unknown.
- * Prefer specific matches (bottom/accessories/gear) before broad "top" words.
+ * Order matters: the most specific buckets are tested before broad "top" words,
+ * so "merino base layer" lands in innerwear rather than top.
  */
 export function inferCategoryFromTitle(
   title: string
 ): SuggestionCategoryId | null {
   const t = title.toLowerCase();
+
+  if (
+    /\b(boots?|shoes?|sneakers?|trainers?|sandals?|footwear|slippers?|flip.?flops?|clogs?|runners?|mocs|moccasins?)\b/.test(
+      t
+    )
+  ) {
+    return "footwear";
+  }
 
   if (
     /\b(legging|leggings|bottoms?|pants?|trousers?|shorts?|skirt|skirts|chinos?|jeans?)\b/.test(
@@ -148,7 +187,15 @@ export function inferCategoryFromTitle(
   }
 
   if (
-    /\b(gloves?|mittens?|hat|hats|beanie|scarves|scarf|buff|gaiter|socks?|sunglasses?|watch|watches|belt|belts|balaclava|earmuffs?|necklace|jewelry)\b/.test(
+    /\b(base.?layer|baselayer|long.?john?s?|thermal|thermals|socks?|underwear|briefs?|boxers?|sports bra|bra\b|liner socks?)\b/.test(
+      t
+    )
+  ) {
+    return "innerwear";
+  }
+
+  if (
+    /\b(gloves?|mittens?|hat|hats|beanie|cap\b|scarves|scarf|buff|neck gaiter|sunglasses?|goggles?|watch|watches|belt|belts|balaclava|earmuffs?|necklace|jewelry)\b/.test(
       t
     )
   ) {
@@ -164,7 +211,7 @@ export function inferCategoryFromTitle(
   }
 
   if (
-    /\b(jacket|jackets|fleece|hoodie|sweater|shirt|shirts|tee\b|t-shirt|tops?|vest|shell|down\b|mid-?layer|base.?layer|long-?sleeve|pullover|parka|coat|anorak|windbreaker|insulated|midweight)\b/.test(
+    /\b(jacket|jackets|fleece|hoodie|sweater|shirt|shirts|tee\b|t-shirt|tops?|vest|shell|down\b|mid-?layer|long-?sleeve|pullover|parka|coat|anorak|windbreaker|insulated|midweight)\b/.test(
       t
     )
   ) {
@@ -172,6 +219,21 @@ export function inferCategoryFromTitle(
   }
 
   return null;
+}
+
+/**
+ * Everyday basics where the specific product barely matters. This app is about
+ * specialised kit, so these are dropped rather than shown as suggestions.
+ */
+const BASIC_ITEM_RE =
+  /\b(thong?s?|g.?string|boxer.?briefs?|boxers?|briefs?|panties|underpants|plain underwear|regular underwear|cotton socks|everyday socks|plain socks|regular socks|plain t.?shirts?|plain tee|basic tee|basic t.?shirt|pyjamas?|pajamas?|undershirt)\b/i;
+
+export function isBasicItem(title: string): boolean {
+  // "Merino underwear" or "wool boxer briefs" are technical — keep those.
+  if (/\b(merino|wool|synthetic|technical|quick.?dry|moisture.?wicking|anti.?odou?r)\b/i.test(title)) {
+    return false;
+  }
+  return BASIC_ITEM_RE.test(title);
 }
 
 function resolveItemCategory(
@@ -279,6 +341,8 @@ export function groupSuggestionsByCategory(
   const buckets = new Map<SuggestionCategoryId, PackSuggestion[]>();
 
   for (const item of suggestions) {
+    if (isBasicItem(item.title)) continue;
+
     const inferred = inferCategoryFromTitle(item.title);
     const id =
       inferred ?? (item.categoryId !== "other" ? item.categoryId : null);

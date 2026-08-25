@@ -3,7 +3,19 @@ export type ImageSearchResult = {
   name: string;
   imageUrl: string;
   sourceUrl?: string;
+  price?: number;
 };
+
+function parsePriceUsd(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.round(value * 100) / 100;
+  }
+  if (typeof value !== "string") return undefined;
+  const match = value.replace(/,/g, "").match(/(?:\$|USD\s*)(\d+(?:\.\d{1,2})?)/i);
+  if (!match) return undefined;
+  const amount = Number(match[1]);
+  return Number.isFinite(amount) && amount > 0 ? amount : undefined;
+}
 
 const PLACEHOLDER_IMAGE =
   "data:image/svg+xml," +
@@ -41,7 +53,10 @@ function isTrustedHost(url: string): boolean {
     const host = new URL(url).hostname;
     return (
       host.endsWith(".wikimedia.org") ||
-      host === "external-content.duckduckgo.com"
+      host === "external-content.duckduckgo.com" ||
+      host.endsWith(".gstatic.com") ||
+      host.endsWith(".googleusercontent.com") ||
+      host.endsWith(".ggpht.com")
     );
   } catch {
     return false;
@@ -78,12 +93,73 @@ async function filterReachableImages(
   items: ImageSearchResult[]
 ): Promise<ImageSearchResult[]> {
   const checks = await Promise.all(
-    items.map(async (item) => ({
-      item,
-      ok: await isImageReachable(item.imageUrl),
-    }))
+    items.map(async (item) => {
+      if (typeof item.price === "number") return { item, ok: true };
+      return {
+        item,
+        ok: await isImageReachable(item.imageUrl),
+      };
+    })
   );
   return checks.filter((entry) => entry.ok).map((entry) => entry.item);
+}
+
+async function searchSerpShopping(
+  query: string,
+  limit: number
+): Promise<ImageSearchResult[]> {
+  const apiKey = process.env.SERPAPI_KEY;
+  if (!apiKey) return [];
+
+  const url = new URL("https://serpapi.com/search.json");
+  url.searchParams.set("engine", "google_shopping");
+  url.searchParams.set("q", query);
+  url.searchParams.set("hl", "en");
+  url.searchParams.set("gl", "us");
+  url.searchParams.set("api_key", apiKey);
+  url.searchParams.set("num", String(Math.max(limit, 10)));
+
+  const response = await fetch(url);
+  if (!response.ok) return [];
+
+  const data = (await response.json()) as {
+    shopping_results?: Array<{
+      title?: string;
+      thumbnail?: string;
+      thumbnails?: string[];
+      product_link?: string;
+      link?: string;
+      extracted_price?: number;
+      price?: string;
+    }>;
+  };
+
+  return (data.shopping_results ?? [])
+    .slice(0, limit)
+    .map((item, index) => {
+      const imageUrl = item.thumbnail ?? item.thumbnails?.[0] ?? "";
+      const price =
+        parsePriceUsd(item.extracted_price) ??
+        parsePriceUsd(item.price) ??
+        parsePriceUsd(item.title);
+      return {
+        id: `shop-${index}-${slugify(item.title ?? query)}`,
+        name: (item.title ?? query).slice(0, 48),
+        imageUrl,
+        sourceUrl: item.product_link ?? item.link,
+        price,
+      };
+    })
+    .filter(
+      (item) =>
+        typeof item.price === "number" &&
+        (isAllowedImageUrl(item.imageUrl) || item.imageUrl === "")
+    )
+    .map((item) =>
+      item.imageUrl
+        ? item
+        : { ...item, imageUrl: PLACEHOLDER_IMAGE }
+    );
 }
 
 async function searchSerpApi(query: string, limit: number): Promise<ImageSearchResult[]> {
@@ -115,6 +191,7 @@ async function searchSerpApi(query: string, limit: number): Promise<ImageSearchR
       name: (item.title ?? query).slice(0, 48),
       imageUrl: item.thumbnail ?? item.original ?? "",
       sourceUrl: item.link,
+      price: parsePriceUsd(item.title),
     }))
     .filter((item) => isAllowedImageUrl(item.imageUrl));
 }
@@ -160,10 +237,11 @@ async function searchDuckDuckGo(query: string, limit: number): Promise<ImageSear
     return (data.results ?? [])
       .slice(0, limit)
       .map((item, index) => ({
-        id: `ddg-${index}-${slugify(item.title ?? query)}`,
-        name: (item.title ?? query).slice(0, 48),
-        imageUrl: item.thumbnail ?? item.image ?? "",
-        sourceUrl: item.url,
+      id: `ddg-${index}-${slugify(item.title ?? query)}`,
+      name: (item.title ?? query).slice(0, 48),
+      imageUrl: item.thumbnail ?? item.image ?? "",
+      sourceUrl: item.url,
+      price: parsePriceUsd(item.title),
       }))
       .filter((item) => isAllowedImageUrl(item.imageUrl));
   } catch {
@@ -247,16 +325,25 @@ export async function searchProductImages(
   limit = 4
 ): Promise<ImageSearchResult[]> {
   const query = searchQuery(rawQuery);
-  const cacheKey = `v5:${query}:${limit}`;
+  const shoppingQuery = rawQuery.replace(/\*\*/g, "").trim() || query;
+  const cacheKey = `v7:${shoppingQuery}:${limit}`;
   const cached = cache.get(cacheKey);
   if (cached) return cached;
 
   let live: ImageSearchResult[] = [];
+  live = mergeResults(
+    live,
+    await searchSerpShopping(shoppingQuery, Math.max(limit, 8)),
+    limit
+  );
   live = mergeResults(live, await searchSerpApi(query, limit), limit);
   live = mergeResults(live, await searchDuckDuckGo(query, limit), limit);
   live = mergeResults(live, await searchWikimedia(query, limit), limit);
 
   let results = await filterReachableImages(live);
+  results.sort(
+    (a, b) => Number(b.price != null) - Number(a.price != null)
+  );
 
   while (results.length < limit) {
     results.push({

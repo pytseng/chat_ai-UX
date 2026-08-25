@@ -4,6 +4,7 @@ export type SavedProduct = {
   imageUrl: string;
   categoryTitle: string;
   sourceUrl?: string;
+  price?: number;
   savedAt: string;
 };
 

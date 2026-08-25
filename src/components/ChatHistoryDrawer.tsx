@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Avatar } from "./Avatar";
 import { CloseIcon, PlusIcon } from "./Icons";
 import { type ChatThread } from "../lib/chatHistoryStorage";
 import {
@@ -315,13 +316,7 @@ export function ChatHistoryDrawer({
                 aria-expanded={editingProfile}
               >
                 <span className="chat-drawer__account-avatar" aria-hidden>
-                  <img
-                    className="chat-drawer__account-avatar-img"
-                    src="/mock-avatar.png"
-                    alt=""
-                    width={32}
-                    height={32}
-                  />
+                  <Avatar className="chat-drawer__account-avatar-img" size={32} />
                 </span>
                 <span className="chat-drawer__account-copy">
                   <span className="chat-drawer__account-label">Profile</span>

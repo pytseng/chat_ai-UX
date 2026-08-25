@@ -1,12 +1,14 @@
 import type { ComponentType } from "react";
+import { Backpack, Glasses, Package, Shirt } from "lucide-react";
 import {
-  ChestIcon,
-  GlovesIcon,
-  InventoryIcon,
-  PantsIcon,
+  BootIcon,
+  TankTopIcon,
+  TrousersIcon,
+  type GarmentIconProps,
 } from "./Icons";
 import { getItemImageUrl } from "../lib/inventoryCatalog";
 import {
+  GAME_SLOTS,
   GAME_SLOT_LABELS,
   loadGameLoadout,
   persistGameLoadout,
@@ -23,69 +25,15 @@ import {
 } from "../lib/listInventoryStorage";
 import { useMemo, useState } from "react";
 
-const SLOT_ICONS: Record<GameSlotId, ComponentType<{ className?: string }>> = {
-  headGear: GlovesIcon,
-  top: ChestIcon,
-  bottom: PantsIcon,
-  backpack: InventoryIcon,
-  footwear: FootwearIcon,
-  innerwear: InnerwearIcon,
-  other: MiscSlotIcon,
+const SLOT_ICONS: Record<GameSlotId, ComponentType<GarmentIconProps>> = {
+  innerwear: TankTopIcon,
+  footwear: BootIcon,
+  top: Shirt,
+  bottom: TrousersIcon,
+  gear: Backpack,
+  accessories: Glasses,
+  other: Package,
 };
-
-function FootwearIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M4 14.5c0-1.5 1-2.5 3-2.5h10c2 0 3 1 3 2.5V18H4v-3.5Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7 12V9a5 5 0 0 1 10 0v3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function InnerwearIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M8 4h8l2 6-4 2v8H10v-8L6 10l2-6Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function MiscSlotIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect
-        x="4"
-        y="7"
-        width="16"
-        height="13"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M9 7V5a3 3 0 0 1 6 0v2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
 
 function ItemPhoto({
   item,
@@ -154,69 +102,20 @@ export function GameStyleInventoryView() {
   return (
     <div className="game-inv">
       <section className="game-inv__loadout" aria-label="Trip loadout">
-        <div className="game-inv__slot game-inv__slot--other">
-          <LoadoutSlot
-            slot="other"
-            itemIds={loadout.other}
-            ownedById={ownedById}
-            highlighted={highlightSlot === "other"}
-            onUnpack={(id) => unpackItem("other", id)}
-          />
-        </div>
-        <div className="game-inv__slot game-inv__slot--innerwear">
-          <LoadoutSlot
-            slot="innerwear"
-            itemIds={loadout.innerwear}
-            ownedById={ownedById}
-            highlighted={highlightSlot === "innerwear"}
-            onUnpack={(id) => unpackItem("innerwear", id)}
-          />
-        </div>
-        <div className="game-inv__slot game-inv__slot--head">
-          <LoadoutSlot
-            slot="headGear"
-            itemIds={loadout.headGear}
-            ownedById={ownedById}
-            highlighted={highlightSlot === "headGear"}
-            onUnpack={(id) => unpackItem("headGear", id)}
-          />
-        </div>
-        <div className="game-inv__slot game-inv__slot--top">
-          <LoadoutSlot
-            slot="top"
-            itemIds={loadout.top}
-            ownedById={ownedById}
-            highlighted={highlightSlot === "top"}
-            onUnpack={(id) => unpackItem("top", id)}
-          />
-        </div>
-        <div className="game-inv__slot game-inv__slot--bottom">
-          <LoadoutSlot
-            slot="bottom"
-            itemIds={loadout.bottom}
-            ownedById={ownedById}
-            highlighted={highlightSlot === "bottom"}
-            onUnpack={(id) => unpackItem("bottom", id)}
-          />
-        </div>
-        <div className="game-inv__slot game-inv__slot--backpack">
-          <LoadoutSlot
-            slot="backpack"
-            itemIds={loadout.backpack}
-            ownedById={ownedById}
-            highlighted={highlightSlot === "backpack"}
-            onUnpack={(id) => unpackItem("backpack", id)}
-          />
-        </div>
-        <div className="game-inv__slot game-inv__slot--footwear">
-          <LoadoutSlot
-            slot="footwear"
-            itemIds={loadout.footwear}
-            ownedById={ownedById}
-            highlighted={highlightSlot === "footwear"}
-            onUnpack={(id) => unpackItem("footwear", id)}
-          />
-        </div>
+        {GAME_SLOTS.map((slot) => (
+          <div
+            key={slot}
+            className={`game-inv__slot game-inv__slot--${slot}`}
+          >
+            <LoadoutSlot
+              slot={slot}
+              itemIds={loadout[slot]}
+              ownedById={ownedById}
+              highlighted={highlightSlot === slot}
+              onUnpack={(id) => unpackItem(slot, id)}
+            />
+          </div>
+        ))}
       </section>
 
       <section className="game-inv__stash" aria-label="Items at home">
@@ -313,7 +212,11 @@ function LoadoutSlot({
     >
       {!filled ? (
         <div className="game-inv__slot-empty">
-          <SlotIcon className="game-inv__slot-icon" />
+          <SlotIcon
+            className="game-inv__slot-icon"
+            size={24}
+            strokeWidth={1.75}
+          />
           <span className="game-inv__slot-label">{GAME_SLOT_LABELS[slot]}</span>
         </div>
       ) : (

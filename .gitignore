@@ -5,5 +5,8 @@
 !.env.example
 node_modules/
 dist/
+scripts/.inventory-cache/
+scripts/.inventory-docs/
 .vercel
+.wrangler/
 tsconfig.tsbuildinfo

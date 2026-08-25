@@ -3,6 +3,7 @@ import { INVENTORY_CATALOG } from "./inventoryCatalog";
 export type ListInventoryCategory =
   | "top"
   | "bottom"
+  | "footwear"
   | "innerwear"
   | "accessories"
   | "gear"
@@ -14,16 +15,19 @@ export type ListInventoryItem = {
   category: ListInventoryCategory;
 };
 
+/** Canonical taxonomy — shared by the inventory views, the loadout grid and
+ *  the chat suggestion parser. Keep these in sync with SuggestionCategoryId. */
 export const LIST_INVENTORY_CATEGORIES: {
   id: ListInventoryCategory;
   label: string;
 }[] = [
   { id: "top", label: "Top" },
   { id: "bottom", label: "Bottom" },
+  { id: "footwear", label: "Footwear" },
   { id: "innerwear", label: "Innerwear" },
   { id: "accessories", label: "Accessories" },
-  { id: "gear", label: "Gears" },
-  { id: "other", label: "Others" },
+  { id: "gear", label: "Gear" },
+  { id: "other", label: "Other" },
 ];
 
 export function categoryLabel(id: ListInventoryCategory): string {
@@ -36,6 +40,7 @@ const DEFAULT_ITEMS: ListInventoryItem[] = INVENTORY_CATALOG;
 
 /** Keyword scoring — highest score wins; ties break by CATEGORY_PRIORITY. */
 const CATEGORY_PRIORITY: ListInventoryCategory[] = [
+  "footwear",
   "innerwear",
   "bottom",
   "top",
@@ -65,8 +70,11 @@ const CLASSIFY_RULES: ClassifyRule[] = [
   { category: "top", pattern: /\b(wetsuit|rashguard|impact jacket|hardshell|midlayer|fleece|puffy|rain shell|sun hoody|hoodie?|windbreaker|anorak|parka)\b/i, weight: 4 },
   { category: "top", pattern: /\b(jacket|shell|vest|fleece|pullover|blouse|t-shirt|tshirt|tee|shirt|top|down|insul)\b/i, weight: 2 },
 
-  // Accessories (includes footwear — no dedicated list tab)
-  { category: "accessories", pattern: /\b(hiking boot?s|trail runner?s|running shoe?s|boot?s|shoe?s|sandal?s|footwear|slipper?s)\b/i, weight: 4 },
+  // Footwear — beats accessories so shoes never land in the wrong tab
+  { category: "footwear", pattern: /\b(hiking boot?s|approach shoe?s|trail runner?s|running shoe?s|camp shoe?s|water shoe?s)\b/i, weight: 5 },
+  { category: "footwear", pattern: /\b(boot?s|shoe?s|sandal?s|sneaker?s|trainer?s|footwear|slipper?s|flip.?flop?s|clog?s)\b/i, weight: 4 },
+
+  // Accessories
   { category: "accessories", pattern: /\b(sun hat|beanie|buff|gaiter|neck gaiter|sunglass(?:es)?|gloves?|mittens?|scarf|belt|watch|cap|hat)\b/i, weight: 3 },
 
   // Gear
@@ -80,6 +88,9 @@ const CLASSIFY_RULES: ClassifyRule[] = [
 export function classifyInventoryItem(name: string): ListInventoryCategory {
   const n = name.trim().toLowerCase();
   if (!n) return "other";
+
+  const fromCatalog = catalogCategoryForName(n);
+  if (fromCatalog) return fromCatalog;
 
   const scores = Object.fromEntries(
     CATEGORY_PRIORITY.map((cat) => [cat, 0])
@@ -103,6 +114,59 @@ export function classifyInventoryItem(name: string): ListInventoryCategory {
   }
 
   return best;
+}
+
+function catalogCategoryForName(name: string): ListInventoryCategory | null {
+  const exact = INVENTORY_CATALOG.find((item) => item.name.toLowerCase() === name);
+  if (exact) return exact.category;
+
+  let bestMatch: ListInventoryItem | undefined;
+  let bestScore = 0;
+
+  for (const item of INVENTORY_CATALOG) {
+    const catalogName = item.name.toLowerCase();
+    if (!catalogName.includes(name) && !name.includes(catalogName)) continue;
+
+    const score = Math.min(catalogName.length, name.length);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = item;
+    }
+  }
+
+  return bestMatch?.category ?? null;
+}
+
+export function insertListInventoryItem(
+  items: ListInventoryItem[],
+  newItem: ListInventoryItem,
+  sortInCategory = false
+): ListInventoryItem[] {
+  if (!sortInCategory) return [...items, newItem];
+
+  const categoryItems = items.filter((item) => item.category === newItem.category);
+  const insertAt = categoryItems.findIndex(
+    (item) =>
+      item.name.localeCompare(newItem.name, undefined, {
+        sensitivity: "base",
+      }) > 0
+  );
+
+  if (insertAt === -1) {
+    if (categoryItems.length === 0) return [...items, newItem];
+
+    const lastCategoryItem = categoryItems[categoryItems.length - 1]!;
+    const lastIndex = items.findIndex((item) => item.id === lastCategoryItem.id);
+    const next = [...items];
+    next.splice(lastIndex + 1, 0, newItem);
+    return next;
+  }
+
+  const anchor = categoryItems[insertAt]!;
+  const anchorIndex = items.findIndex((item) => item.id === anchor.id);
+  const next = [...items];
+  next.splice(anchorIndex, 0, newItem);
+  return next;
 }
 
 export function loadListInventory(): ListInventoryItem[] {

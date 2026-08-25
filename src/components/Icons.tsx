@@ -2,6 +2,65 @@ type IconProps = {
   className?: string;
 };
 
+/** Lucide has no tank-top, trousers or boot glyph, so these follow its
+ *  conventions by hand: 24px box, round caps and joins, no fill. */
+export type GarmentIconProps = {
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+};
+
+function GarmentIcon({
+  size = 24,
+  strokeWidth = 2,
+  className,
+  children,
+}: GarmentIconProps & { children: React.ReactNode }) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {children}
+    </svg>
+  );
+}
+
+export function TankTopIcon(props: GarmentIconProps) {
+  return (
+    <GarmentIcon {...props}>
+      <path d="M9 3 6 5v16h12V5l-3-2" />
+      <path d="M9 3a3 3 0 0 0 6 0" />
+    </GarmentIcon>
+  );
+}
+
+export function TrousersIcon(props: GarmentIconProps) {
+  return (
+    <GarmentIcon {...props}>
+      <path d="M5.5 3h13l-1 18h-4L12 12l-1.5 9h-4L5.5 3Z" />
+      <path d="M6 7h12" />
+    </GarmentIcon>
+  );
+}
+
+export function BootIcon(props: GarmentIconProps) {
+  return (
+    <GarmentIcon {...props}>
+      <path d="M7 3h5.5v8.5h3a4 4 0 0 1 4 4V20H7V3Z" />
+      <path d="M7 16h12.5" />
+    </GarmentIcon>
+  );
+}
+
 export function ImageIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -90,11 +149,52 @@ export function ChevronDownIcon({ className }: IconProps) {
   );
 }
 
+export function ChevronLeftIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M15 6l-6 6 6 6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M9 6l6 6-6 6"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function PlusIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M12 5v14M5 12h14"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function MinusIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M5 12h14"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
@@ -166,7 +266,34 @@ export function MenuIcon({ className }: IconProps) {
 }
 
 /**
- * Lucide Lab chest — stroke style for Stash.
+ * Old-school hand cart — Lucide geometry: 24×24 grid, stroke 2, round caps.
+ */
+export function CartIcon({ className }: IconProps) {
+  return (
+    <svg
+      className={className}
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M2.5 4h2.2l1.8 2.5" />
+      <path d="M6.5 6.5h15l-3.6 7.5H9.4z" />
+      <path d="M9.4 14v3.6L13 14" />
+      <path d="M17.6 14l.2 1" />
+      <circle cx="17.8" cy="17.4" r="2.4" />
+    </svg>
+  );
+}
+
+/**
+ * Lucide Lab chest — stroke style for inventory.
  * https://lucide.dev/icons/lab/chest
  */
 export function ChestIcon({ className }: IconProps) {
