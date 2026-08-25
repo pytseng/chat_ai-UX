@@ -21,9 +21,9 @@ const BASE = process.argv[2] ?? "http://localhost:4173";
 const VIEWPORT = { width: 430, height: 932 };
 
 const SEL = {
-  openInventory: 'button[aria-label="Open inventory"]',
+  openInventory: 'button[aria-label="Open stash"]',
   sheet: ".inventory-panel__sheet",
-  viewSelect: ".inventory-panel__select",
+  panelTabs: ".inventory-panel__tab",
   listTabs: ".list-inventory__tabs .pack-tabs__tab",
   search: ".list-inventory__search",
   categoryBtn: 'button[aria-label^="Change category for"]',
@@ -43,10 +43,13 @@ async function openPanel(page) {
   await page.waitForTimeout(700);
 }
 
-async function selectView(page, value) {
-  await page.selectOption(SEL.viewSelect, value);
+async function selectTab(page, label) {
+  await page.locator(SEL.panelTabs, { hasText: label }).first().click();
   await page.waitForTimeout(600);
 }
+
+const goToPack = (page) => selectTab(page, "Pack");
+const goToStash = (page) => selectTab(page, "Stash");
 
 /** Wait for every <img> currently in the panel to finish loading. */
 async function settleImages(page) {
@@ -134,11 +137,11 @@ await shoot(browser, "inventory-list-category", async (page) => {
 });
 
 await shoot(browser, "inventory-game", async (page) => {
-  await selectView(page, "game-inventory");
+  await goToPack(page);
 });
 
 await shoot(browser, "inventory-game-packed", async (page) => {
-  await selectView(page, "game-inventory");
+  await goToPack(page);
   await settleImages(page);
   for (const idx of [0, 1]) {
     await page.locator(SEL.gameCard).nth(idx).click();
@@ -162,9 +165,9 @@ await record(browser, "inventory-switch", async (page) => {
   await page.click(SEL.openInventory);
   await page.waitForSelector(SEL.sheet);
   await page.waitForTimeout(1200);
-  await selectView(page, "game-inventory");
+  await goToPack(page);
   await page.waitForTimeout(1600);
-  await selectView(page, "list-inventory");
+  await goToStash(page);
   await page.waitForTimeout(1200);
 });
 
@@ -196,7 +199,7 @@ await record(browser, "inventory-game-tour", async (page) => {
   await page.click(SEL.openInventory);
   await page.waitForSelector(SEL.sheet);
   await page.waitForTimeout(600);
-  await selectView(page, "game-inventory");
+  await goToPack(page);
   await page.waitForTimeout(1000);
 
   for (const idx of [0, 1, 2]) {

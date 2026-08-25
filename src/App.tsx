@@ -289,7 +289,7 @@ export default function App() {
               type="button"
               className="header__icon-btn"
               onClick={() => setInventoryOpen(true)}
-              aria-label="Open inventory"
+              aria-label="Open stash"
               aria-expanded={inventoryOpen}
             >
               <ChestIcon />
