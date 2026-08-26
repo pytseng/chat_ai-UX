@@ -1,12 +1,9 @@
-type IconProps = {
-  className?: string;
-};
-
-/** Lucide has no tank-top, trousers or boot glyph, so these follow its
- *  conventions by hand: 24px box, round caps and joins, no fill. */
+/** Custom glyphs on Tabler’s 24×24 / stroke-2 grid — same round caps,
+ *  1px hem radii, and ~4px padding as `shirt`. Only used when Tabler
+ *  has no matching outline (tank, trousers, glove). */
 export type GarmentIconProps = {
-  size?: number;
-  strokeWidth?: number;
+  size?: number | string;
+  strokeWidth?: number | string;
   className?: string;
 };
 
@@ -27,6 +24,7 @@ function GarmentIcon({
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
+      overflow="visible"
       aria-hidden
     >
       {children}
@@ -34,410 +32,32 @@ function GarmentIcon({
   );
 }
 
+/** Sleeveless tank — same neck and hem language as Tabler’s `shirt`. */
 export function TankTopIcon(props: GarmentIconProps) {
   return (
     <GarmentIcon {...props}>
-      <path d="M9 3 6 5v16h12V5l-3-2" />
-      <path d="M9 3a3 3 0 0 0 6 0" />
+      <path d="M15 4l3 3v12a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1v-12l3 -3a3 3 0 0 0 6 0" />
     </GarmentIcon>
   );
 }
 
+/** Trousers — Tabler has no pants glyph. Shirt hem radii, two legs. */
 export function TrousersIcon(props: GarmentIconProps) {
   return (
     <GarmentIcon {...props}>
-      <path d="M5.5 3h13l-1 18h-4L12 12l-1.5 9h-4L5.5 3Z" />
-      <path d="M6 7h12" />
+      <path d="M5 4h14l-1 4v12a1 1 0 0 1 -1 1h-3a1 1 0 0 1 -1 -1v-7h-2v7a1 1 0 0 1 -1 1H7a1 1 0 0 1 -1 -1V8z" />
+      <path d="M6 8h12" />
     </GarmentIcon>
   );
 }
 
-export function BootIcon(props: GarmentIconProps) {
+/** Winter glove — Tabler has no glove. Thumb is an open bump, not a retrace. */
+export function GloveIcon(props: GarmentIconProps) {
   return (
     <GarmentIcon {...props}>
-      <path d="M7 3h5.5v8.5h3a4 4 0 0 1 4 4V20H7V3Z" />
-      <path d="M7 16h12.5" />
+      <path d="M8 7a4 4 0 0 1 8 0v10a2 2 0 0 1 -2 2h-4a2 2 0 0 1 -2 -2z" />
+      <path d="M8 12H6a2 2 0 1 1 0 -4h2" />
+      <path d="M10 17h4" />
     </GarmentIcon>
-  );
-}
-
-export function ImageIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect
-        x="3"
-        y="3"
-        width="18"
-        height="18"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-      <path
-        d="M3 16l5-5 4 4 3-3 6 6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function CodeIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M8 8L4 12l4 4M16 8l4 4-4 4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function MicIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect
-        x="9"
-        y="3"
-        width="6"
-        height="11"
-        rx="3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M5 11a7 7 0 0014 0M12 18v3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-export function ArrowUpIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M12 6v12M12 6l-4 4M12 6l4 4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function ChevronDownIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M6 9l6 6 6-6"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function ChevronLeftIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M15 6l-6 6 6 6"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function ChevronRightIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M9 6l6 6-6 6"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function PlusIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M12 5v14M5 12h14"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-export function MinusIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M5 12h14"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-export function CheckIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M5 12l4 4 10-10"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function UndoIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M9 7H5v4M5 11a7 7 0 101.5-4.5"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function StopIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-export function CloseIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M6 6l12 12M18 6L6 18"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-export function MenuIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M4 7h16M4 12h16M4 17h16"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-/**
- * Old-school hand cart — Lucide geometry: 24×24 grid, stroke 2, round caps.
- */
-export function CartIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={className}
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M2.5 4h2.2l1.8 2.5" />
-      <path d="M6.5 6.5h15l-3.6 7.5H9.4z" />
-      <path d="M9.4 14v3.6L13 14" />
-      <path d="M17.6 14l.2 1" />
-      <circle cx="17.8" cy="17.4" r="2.4" />
-    </svg>
-  );
-}
-
-/**
- * Lucide Lab chest — stroke style for inventory.
- * https://lucide.dev/icons/lab/chest
- */
-export function ChestIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={className}
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M8 19a2 2 0 0 0 2-2V9a4 4 0 0 0-8 0v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a4 4 0 0 0-4-4H6"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M2 11h20"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M16 11v3"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/**
- * Iconoir pants — exact path, stroke 1.5 on 24×24 grid.
- * https://iconoir.com
- */
-export function PantsIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={className}
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M12 19H16.4363C16.7532 19 17.0154 18.7536 17.0352 18.4374L17.9602 3.63743C17.9817 3.29201 17.7074 3 17.3613 3H6.63426C6.28981 3 6.01608 3.28936 6.03518 3.63328L6.96852 20.4333C6.98618 20.7512 7.24915 21 7.56759 21H11.4C11.7314 21 12 20.7314 12 20.4V8"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/**
- * Iconoir boxing-glove — exact paths, stroke 1.5 on 24×24 grid.
- * https://iconoir.com
- */
-export function GlovesIcon({ className }: IconProps) {
-  return (
-    <svg
-      className={className}
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M8.48901 17.7273H18.3556M8.48901 17.7273V21H18.3556V17.7273M8.48901 17.7273C5.20016 15.5455 3.55573 10.0909 4.10387 8.45455C4.54239 7.14545 6.47916 7.54545 7.39273 7.90909C7.39273 4.09091 9.03715 3 13.4223 3C17.8074 3 20 4.09091 20 9.54545C20 13.9091 18.9037 16.8182 18.3556 17.7273"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7.39282 7.90909C7.75825 8.27272 8.81799 9 10.1335 9C11.4491 9 13.9705 9 15.0668 9"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7.39282 7.90909C7.39282 11.7273 9.03725 12.2727 10.1335 12.2727"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/** 2×2 grid — inventory / loadout */
-export function InventoryIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
-      <rect
-        x="3"
-        y="3"
-        width="8"
-        height="8"
-        rx="1.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <rect
-        x="13"
-        y="3"
-        width="8"
-        height="8"
-        rx="1.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <rect
-        x="3"
-        y="13"
-        width="8"
-        height="8"
-        rx="1.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <rect
-        x="13"
-        y="13"
-        width="8"
-        height="8"
-        rx="1.5"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-    </svg>
   );
 }

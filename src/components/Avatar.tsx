@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { User } from "lucide-react";
+import { IconUser } from "@tabler/icons-react";
 import { mediaUrl } from "../lib/media";
 
 /** R2 object — uploaded via scripts/upload-default-avatar.mjs */
@@ -31,7 +31,7 @@ export function Avatar({ src, alt = "", size = 32, className }: AvatarProps) {
   }, [preferred]);
 
   if (exhausted) {
-    return <User className="avatar__fallback" strokeWidth={2} aria-hidden />;
+    return <IconUser className="avatar__fallback" stroke={2} aria-hidden />;
   }
 
   return (

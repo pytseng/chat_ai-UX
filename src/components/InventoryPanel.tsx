@@ -1,21 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { CloseIcon } from "./Icons";
-import { GameStyleInventoryView } from "./GameStyleInventoryView";
-import { ListInventoryView } from "./ListInventoryView";
+import { IconX } from "@tabler/icons-react";
+import { StashView } from "./StashView";
 
 const PANEL_CLOSE_MS = 480;
-
-/**
- * Two contexts over the same owned items: Stash to view and edit them, Pack to
- * try them against a trip. Future contexts (saved packs, bag sizes) slot in as
- * additional tabs rather than separate screens.
- */
-type PanelTab = "stash" | "pack";
-
-const PANEL_TABS: { id: PanelTab; label: string }[] = [
-  { id: "stash", label: "Stash" },
-  { id: "pack", label: "Pack" },
-];
 
 type InventoryPanelProps = {
   open: boolean;
@@ -25,7 +12,6 @@ type InventoryPanelProps = {
 export function InventoryPanel({ open, onClose }: InventoryPanelProps) {
   const [rendered, setRendered] = useState(open);
   const [closing, setClosing] = useState(false);
-  const [tab, setTab] = useState<PanelTab>("stash");
   const closeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -37,7 +23,6 @@ export function InventoryPanel({ open, onClose }: InventoryPanelProps) {
     if (open) {
       setRendered(true);
       setClosing(false);
-      setTab("stash");
       return;
     }
 
@@ -79,32 +64,7 @@ export function InventoryPanel({ open, onClose }: InventoryPanelProps) {
       <div className="inventory-panel__frame">
         <div className="inventory-panel__sheet">
           <header className="inventory-panel__header">
-            <div
-              className="inventory-panel__tabs"
-              role="tablist"
-              aria-label="Stash views"
-            >
-              {PANEL_TABS.map((entry) => {
-                const active = tab === entry.id;
-                return (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    className={
-                      active
-                        ? "inventory-panel__tab inventory-panel__tab--active"
-                        : "inventory-panel__tab"
-                    }
-                    onClick={() => setTab(entry.id)}
-                    disabled={closing}
-                  >
-                    {entry.label}
-                  </button>
-                );
-              })}
-            </div>
+            <h2 className="inventory-panel__title">Stash</h2>
 
             <button
               type="button"
@@ -113,12 +73,12 @@ export function InventoryPanel({ open, onClose }: InventoryPanelProps) {
               aria-label="Close"
               disabled={closing}
             >
-              <CloseIcon />
+              <IconX aria-hidden />
             </button>
           </header>
 
-          <div className="inventory-panel__body" role="tabpanel">
-            {tab === "pack" ? <GameStyleInventoryView /> : <ListInventoryView />}
+          <div className="inventory-panel__body">
+            <StashView />
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@
 }
 
 .phone {
+  --composer-offset: 97px;
   width: 100%;
   max-width: 430px;
   height: 100dvh;
@@ -79,10 +80,15 @@
   min-width: 0;
 }
 
-.header__menu-btn {
+/*
+ * Chrome icon buttons — 36px circles. Used for app navigation on the home
+ * header (over the liquid background): open Menu, open Stash.
+ */
+.header__menu-btn,
+.header__icon-btn {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: var(--control-chrome);
+  height: var(--control-chrome);
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -93,36 +99,67 @@
   box-shadow: var(--liquid-glass-shadow);
   -webkit-backdrop-filter: var(--liquid-glass-filter);
   backdrop-filter: var(--liquid-glass-filter);
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
 
-.header__menu-btn:hover {
+.header__menu-btn:hover,
+.header__icon-btn:hover {
   background: var(--liquid-glass-bg-strong);
   box-shadow: var(--liquid-glass-shadow-hover);
-}
-
-.header__menu-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.header__title {
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: none;
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
   color: var(--emerald-jewel);
-  cursor: pointer;
-  text-align: left;
-  font-family: inherit;
 }
 
-.header__title:hover {
-  opacity: 0.85;
+.header__menu-btn svg,
+.header__icon-btn svg {
+  width: var(--control-glyph);
+  height: var(--control-glyph);
+}
+
+/*
+ * Panel dismiss — same 36px hit as header chrome, but flush with the title
+ * (no glass lift or drop shadow on the sheet).
+ */
+.chat-drawer__close,
+.inventory-panel__close,
+.stash-panel__close,
+.stash-panel__back {
+  flex-shrink: 0;
+  width: var(--control-chrome);
+  height: var(--control-chrome);
+  margin-right: -6px;
+  border: none;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--emerald-jewel);
+  background: transparent;
+  box-shadow: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.chat-drawer__close:hover,
+.inventory-panel__close:hover,
+.stash-panel__close:hover,
+.stash-panel__back:hover {
+  background: rgba(13, 168, 92, 0.1);
+  color: var(--emerald-deep);
+}
+
+.chat-drawer__close:focus-visible,
+.inventory-panel__close:focus-visible,
+.stash-panel__close:focus-visible,
+.stash-panel__back:focus-visible {
+  outline: 2px solid var(--emerald-jewel);
+  outline-offset: 2px;
+}
+
+.chat-drawer__close svg,
+.inventory-panel__close svg,
+.stash-panel__close svg,
+.stash-panel__back svg {
+  width: var(--control-glyph);
+  height: var(--control-glyph);
 }
 
 .header__trailing {
@@ -134,30 +171,6 @@
 
 .header__icon-btn {
   position: relative;
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--emerald-jewel);
-  background: var(--liquid-glass-bg);
-  border: var(--liquid-glass-border);
-  box-shadow: var(--liquid-glass-shadow);
-  -webkit-backdrop-filter: var(--liquid-glass-filter);
-  backdrop-filter: var(--liquid-glass-filter);
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.header__icon-btn:hover {
-  background: var(--liquid-glass-bg-strong);
-  box-shadow: var(--liquid-glass-shadow-hover);
-}
-
-.header__icon-btn svg {
-  width: 20px;
-  height: 20px;
 }
 
 .header__stash-badge {
@@ -185,7 +198,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 12px 19px 168px 18px;
+  padding: 12px 19px var(--composer-offset) 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1463,43 +1476,7 @@
 }
 
 .stash-panel__back {
-  width: 32px;
-  height: 32px;
   margin-left: -6px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
-
-.stash-panel__back:hover {
-  background: var(--emerald-mist);
-}
-
-.stash-panel__back svg {
-  width: 18px;
-  height: 18px;
-}
-
-.stash-panel__close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-}
-
-.stash-panel__close:hover {
-  background: var(--emerald-mist);
-}
-
-.stash-panel__close svg {
-  width: 18px;
-  height: 18px;
 }
 
 .stash-panel__empty {
@@ -1995,6 +1972,13 @@
   color: var(--text-secondary);
 }
 
+.stash-success__stash {
+  margin: 6px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
 .stash-success__order {
   margin: 0 0 8px;
   font-size: 12px;
@@ -2160,6 +2144,26 @@
   letter-spacing: 0;
   text-transform: none;
   color: var(--text-muted);
+}
+
+.chat-drawer__section-edit {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--emerald-jewel);
+  cursor: pointer;
+}
+
+.chat-drawer__section-edit:hover:not(:disabled) {
+  color: var(--emerald-deep);
+}
+
+.chat-drawer__section-edit[aria-pressed="true"] {
+  font-weight: 600;
 }
 
 .chat-drawer__footer-row {
@@ -2328,25 +2332,6 @@
   color: var(--text-secondary);
 }
 
-.chat-drawer__close {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-}
-
-.chat-drawer__close:hover {
-  background: rgba(255, 255, 255, 0.55);
-}
-
-.chat-drawer__close svg {
-  width: 18px;
-  height: 18px;
-}
-
 .chat-drawer__new {
   display: inline-flex;
   align-items: center;
@@ -2432,22 +2417,22 @@
 }
 
 .chat-drawer__item-delete {
-  width: 36px;
   flex-shrink: 0;
+  width: var(--control-nested);
+  height: var(--control-nested);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #b91c1c;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.chat-drawer__item-delete:hover {
-  background: rgba(255, 240, 240, 0.8);
-  color: #b00020;
-}
-
-.chat-drawer__item-delete svg {
-  width: 14px;
-  height: 14px;
+.chat-drawer__item-delete:hover:not(:disabled) {
+  background: rgba(185, 28, 28, 0.08);
 }
 
 .message--error {
@@ -2564,7 +2549,7 @@
   right: 0;
   z-index: 5;
   width: 100%;
-  padding: 12px 10px calc(29px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 10px calc(18px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(
     to top,
     rgba(220, 226, 226, 0.55) 0%,
@@ -2664,8 +2649,8 @@
 }
 
 .chat-box {
-  border: 1px solid rgba(13, 168, 92, 0.14);
-  border-radius: 24px;
+  border: var(--field-border);
+  border-radius: var(--field-radius);
   background: linear-gradient(
     165deg,
     rgba(232, 240, 236, 0.97) 0%,
@@ -2674,10 +2659,11 @@
   );
   -webkit-backdrop-filter: blur(24px) saturate(1.3);
   backdrop-filter: blur(24px) saturate(1.3);
-  padding: 12px 12px 10px;
+  padding: 6px 6px 6px 16px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 8px;
   box-shadow:
     0 12px 32px rgba(51, 51, 51, 0.1),
     0 2px 8px rgba(13, 168, 92, 0.06),
@@ -2687,63 +2673,40 @@
 }
 
 .chat-box__field {
-  width: 100%;
-  min-height: 24px;
-  max-height: 120px;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.45;
+  flex: 1;
+  min-width: 0;
+  min-height: var(--control-nested);
+  max-height: 40vh;
+  padding: 5px 0;
+  font-size: var(--field-text);
+  font-weight: 500;
+  letter-spacing: -0.014em;
+  line-height: var(--field-leading);
   color: var(--text-primary);
+  overflow-y: auto;
+  overflow-wrap: anywhere;
 }
 
 .chat-box__field::placeholder {
-  color: var(--text-muted);
-  font-weight: 400;
+  color: var(--text-placeholder);
+  -webkit-text-fill-color: var(--text-placeholder);
+  opacity: 1;
+  font-weight: 500;
 }
 
 .chat-box__field:focus::placeholder {
   color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
-.chat-box__toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.chat-box__actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.icon-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-}
-
-.icon-btn:hover:not(:disabled) {
-  background: var(--emerald-mist);
-}
-
-.icon-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.icon-btn svg {
-  width: 20px;
-  height: 20px;
+.chat-box__field:disabled {
+  opacity: 0.65;
 }
 
 .send-btn {
-  width: 32px;
-  height: 32px;
+  flex-shrink: 0;
+  width: var(--control-nested);
+  height: var(--control-nested);
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -2755,8 +2718,8 @@
 }
 
 .send-btn:disabled {
-  background: var(--silver-deep);
-  color: #fff;
+  background: rgba(47, 63, 56, 0.12);
+  color: rgba(47, 63, 56, 0.42);
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -2905,51 +2868,14 @@
   flex-shrink: 0;
 }
 
-/*
- * Top-level context switcher. Deliberately a segmented track rather than the
- * loose .pack-tabs chips, so it never reads as another row of category filters.
- */
-.inventory-panel__tabs {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(47, 47, 47, 0.06);
-  min-width: 0;
-}
-
-.inventory-panel__tab {
-  padding: 7px 18px;
-  border: none;
-  border-radius: 999px;
-  background: none;
-  color: var(--text-secondary);
-  font-size: 15px;
+/* Matches .chat-drawer__title in size, but not brand color — Stash is a
+ * feature screen, SecretStash is the product name in the menu. */
+.inventory-panel__title {
+  margin: 0;
+  font-size: 22px;
   font-weight: 600;
-  letter-spacing: -0.2px;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.inventory-panel__tab:hover:not(:disabled) {
+  letter-spacing: -0.3px;
   color: var(--text-primary);
-}
-
-.inventory-panel__tab--active {
-  background: rgba(255, 255, 255, 0.98);
-  color: var(--emerald-jewel);
-  box-shadow: 0 1px 3px rgba(51, 51, 51, 0.12);
-}
-
-.inventory-panel__tab--active:hover:not(:disabled) {
-  color: var(--emerald-jewel);
-}
-
-.inventory-panel__tab:focus-visible {
-  outline: 2px solid var(--emerald-jewel);
-  outline-offset: 2px;
 }
 
 .inventory-panel__body {
@@ -2960,31 +2886,9 @@
   flex-direction: column;
 }
 
-.inventory-panel__close {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.75);
-}
+/* ── Stash ── */
 
-.inventory-panel__close:hover {
-  color: var(--emerald-jewel);
-}
-
-.inventory-panel__close svg {
-  width: 18px;
-  height: 18px;
-}
-
-/* ── List inventory (option 1) ── */
-
-.list-inventory {
+.stash {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -2992,52 +2896,127 @@
   height: 100%;
 }
 
-/* Padding here keeps the focus ring from being clipped by the panel edge. */
-.list-inventory__search-wrap {
+/*
+ * Pack toggle · search with category filter · list/card switch. The padding
+ * keeps focus rings from being clipped by the panel edge.
+ */
+.stash__toolbar {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 3px;
 }
 
-.list-inventory__search-field {
+.stash__tool {
   position: relative;
-  display: flex;
+  flex-shrink: 0;
+  width: var(--control-chrome);
+  height: var(--control-chrome);
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: var(--field-border);
+  background: var(--field-fill);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.list-inventory__search-icon {
+.stash__tool:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
+}
+
+.stash__tool--active {
+  border-color: rgba(13, 168, 92, 0.4);
+  background: var(--emerald-mist);
+  color: var(--emerald-deep);
+}
+
+.stash__tool--active:hover {
+  border-color: rgba(13, 168, 92, 0.55);
+  background: rgba(13, 168, 92, 0.2);
+  color: var(--emerald-jewel);
+}
+
+.stash__tool:focus-visible {
+  outline: 2px solid var(--emerald-jewel);
+  outline-offset: 1px;
+}
+
+.stash__tool-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--emerald-jewel);
+  color: var(--text-on-emerald);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.stash__search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  min-height: var(--control-chrome);
+  padding-left: 34px;
+  padding-right: 4px;
+  border-radius: var(--field-radius);
+  border: var(--field-border);
+  background: var(--field-fill);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stash__search:focus-within {
+  border-color: rgba(13, 168, 92, 0.4);
+  box-shadow: 0 0 0 2px rgba(13, 168, 92, 0.12);
+}
+
+.stash__search-icon {
   position: absolute;
   left: 12px;
   color: var(--text-muted);
   pointer-events: none;
 }
 
-.list-inventory__search {
-  width: 100%;
-  min-height: 36px;
-  padding: 7px 34px 7px 33px;
-  border-radius: 999px;
-  border: 1px solid rgba(13, 168, 92, 0.16);
-  background: rgba(255, 255, 255, 0.62);
+.stash__search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 0;
+  border: none;
+  background: transparent;
   color: var(--text-primary);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--field-text);
+  font-weight: 400;
+  line-height: var(--field-leading);
 }
 
-.list-inventory__search::placeholder {
+.stash__search-input::placeholder {
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 400;
 }
 
-.list-inventory__search:focus-visible {
-  outline: 2px solid var(--emerald-jewel);
-  outline-offset: 1px;
+.stash__search-input:focus-visible {
+  outline: none;
 }
 
-.list-inventory__search-clear {
-  position: absolute;
-  right: 8px;
-  width: 22px;
-  height: 22px;
+.stash__search-clear {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3047,31 +3026,240 @@
   cursor: pointer;
 }
 
-.list-inventory__search-clear:hover {
+.stash__search-clear:hover {
   color: var(--text-primary);
   background: rgba(47, 47, 47, 0.14);
 }
 
-.list-inventory__tabs {
-  margin: 0;
+/* Lives inside the field so filtering and searching read as one control. */
+.stash__filter {
+  position: relative;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  width: 28px;
+  margin-left: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(47, 47, 47, 0.06);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-/* Replaces the category chips while searching, to show the wider scope */
-.list-inventory__scope {
-  margin: 0;
-  flex-shrink: 0;
-  padding: 0 4px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+.stash__filter--set {
+  background: var(--emerald-mist);
+  color: var(--emerald-deep);
+}
+
+.stash__filter:hover {
+  background: rgba(47, 47, 47, 0.13);
+  color: var(--text-primary);
+}
+
+.stash__filter--set:hover {
+  background: var(--emerald-mist);
+  color: var(--emerald-deep);
+}
+
+.stash__filter-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--emerald-jewel);
+  color: var(--text-on-emerald);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
+.stash__filter-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(13, 168, 92, 0.18);
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(15, 42, 30, 0.16);
+  animation: stash-menu-in 0.14s ease-out;
+}
+
+.stash__filter-group + .stash__filter-group {
+  padding-top: 12px;
+  border-top: 1px solid rgba(13, 168, 92, 0.12);
+}
+
+.stash__filter-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.stash__filter-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
 
-.list-inventory__list {
+.stash__filter-reset {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--emerald-jewel);
+  cursor: pointer;
+}
+
+.stash__filter-reset:disabled {
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: default;
+}
+
+.stash__filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stash__filter-pill {
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 168, 92, 0.2);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.stash__filter-pill:hover {
+  border-color: var(--emerald-jewel);
+  background: var(--emerald-mist);
+  color: var(--emerald-deep);
+}
+
+.stash__filter-pill--on {
+  border-color: rgba(13, 168, 92, 0.35);
+  background: var(--emerald-mist);
+  color: var(--emerald-deep);
+}
+
+@keyframes stash-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pack expands in place, between the toolbar and the items it draws from. */
+.stash__pack {
+  position: relative;
+  flex-shrink: 0;
+  animation: stash-pack-in 0.24s cubic-bezier(0.22, 0.82, 0.28, 1);
+}
+
+.stash__pack-info {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(18, 24, 30, 0.55);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: help;
+}
+
+.stash__pack-info:hover,
+.stash__pack-info:focus-visible {
+  color: rgba(255, 255, 255, 0.82);
+  background: rgba(18, 24, 30, 0.78);
+}
+
+.stash__pack-info:focus-visible {
+  outline: 2px solid rgba(250, 250, 198, 0.7);
+  outline-offset: 1px;
+}
+
+.stash__pack-info-tip {
+  position: absolute;
+  left: calc(100% + 6px);
+  top: 50%;
+  z-index: 3;
+  width: max-content;
+  max-width: 11.5rem;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(18, 24, 30, 0.94);
+  color: rgba(244, 247, 244, 0.92);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 8px 20px rgba(8, 12, 16, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-50%) translateX(-2px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  pointer-events: none;
+}
+
+.stash__pack-info:hover .stash__pack-info-tip,
+.stash__pack-info:focus-visible .stash__pack-info-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+@keyframes stash-pack-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stash__items {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 2px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -3080,8 +3268,54 @@
   overflow-y: auto;
 }
 
-.list-inventory__empty {
-  padding: 20px 12px;
+.stash__items--cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 8px;
+}
+
+.stash-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 4px -2px;
+  padding: 0;
+  list-style: none;
+  flex-shrink: 0;
+}
+
+.stash-section:first-child {
+  margin-top: 2px;
+}
+
+.stash-section__label {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stash-section__rule {
+  flex: 1;
+  height: 1px;
+  background: rgba(13, 168, 92, 0.18);
+}
+
+.stash__items--cards .stash-section {
+  grid-column: 1 / -1;
+  margin: 4px 2px -2px;
+}
+
+.stash__empty {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px;
   border-radius: 10px;
   border: 1px dashed rgba(13, 168, 92, 0.2);
   text-align: center;
@@ -3089,11 +3323,42 @@
   color: var(--text-muted);
 }
 
-.list-inventory__row {
+.stash__empty-copy {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.stash__empty-action {
+  height: var(--control-nested);
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(13, 168, 92, 0.28);
+  background: rgba(13, 168, 92, 0.08);
+  color: var(--emerald-deep);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stash__empty-action:hover {
+  background: rgba(13, 168, 92, 0.14);
+}
+
+.stash__empty-action:focus-visible {
+  outline: 2px solid var(--emerald-jewel);
+  outline-offset: 1px;
+}
+
+.stash__items--cards .stash__empty {
+  grid-column: 1 / -1;
+}
+
+.stash-row {
   display: flex;
   flex-direction: column;
-  min-height: 44px;
-  padding: 8px 6px 8px 4px;
+  flex-shrink: 0;
+  overflow: hidden;
+  padding: 6px;
   border-radius: 10px;
   border: 1px solid rgba(13, 168, 92, 0.14);
   background: #fff;
@@ -3103,28 +3368,28 @@
     opacity 0.15s ease;
 }
 
-.list-inventory__row-main {
+.stash-row__main {
   display: flex;
   align-items: center;
   gap: 4px;
   flex: 1;
 }
 
-.list-inventory__row--editing {
+.stash-row--editing {
   border-color: rgba(13, 168, 92, 0.38);
   box-shadow: 0 1px 8px rgba(13, 168, 92, 0.1);
 }
 
-.list-inventory__row--dragging {
+.stash-row--dragging {
   opacity: 0.45;
 }
 
-.list-inventory__row--drop-target {
+.stash-row--drop-target {
   border-color: rgba(13, 168, 92, 0.45);
   box-shadow: 0 0 0 2px rgba(13, 168, 92, 0.12);
 }
 
-.list-inventory__drag {
+.stash-row__drag {
   flex-shrink: 0;
   width: 28px;
   height: 28px;
@@ -3136,11 +3401,77 @@
   cursor: grab;
 }
 
-.list-inventory__drag:active {
+.stash-row__drag:active {
   cursor: grabbing;
 }
 
-.list-inventory__name {
+.stash-row__hit,
+.stash-row__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+
+/*
+ * The whole row is the affordance — tap to edit the name in place.
+ */
+.stash-row__hit {
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.stash-row__hit:hover {
+  background: rgba(13, 168, 92, 0.06);
+}
+
+.stash-row__hit:focus-visible {
+  outline: 2px solid var(--emerald-jewel);
+  outline-offset: 1px;
+}
+
+.stash-row__thumb {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f4f6f4;
+  color: var(--emerald-jewel);
+}
+
+.stash-row__thumb svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  overflow: visible;
+}
+
+.stash-row__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  object-fit: contain;
+  object-position: center;
+}
+
+.stash-row__name {
   flex: 1;
   min-width: 0;
   font-size: 14px;
@@ -3152,181 +3483,238 @@
   white-space: nowrap;
 }
 
-.list-inventory__rename {
-  flex: 1;
+/* ── Stash cards ── */
+
+.stash-card-cell {
+  position: relative;
   min-width: 0;
-  padding: 4px 8px;
+}
+
+.stash-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 6px 8px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(13, 168, 92, 0.14);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+}
+
+.stash-card:hover {
+  box-shadow: 0 4px 14px rgba(13, 168, 92, 0.12);
+}
+
+.stash-card:active {
+  transform: scale(0.985);
+}
+
+.stash-card--editing {
+  cursor: default;
+  border-color: rgba(13, 168, 92, 0.38);
+  box-shadow: 0 1px 8px rgba(13, 168, 92, 0.1);
+}
+
+.stash-card--editing:hover {
+  box-shadow: 0 1px 8px rgba(13, 168, 92, 0.1);
+}
+
+.stash-card--editing:active {
+  transform: none;
+}
+
+.stash-card__glyph {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   border-radius: 8px;
-  border: 1px solid rgba(13, 168, 92, 0.25);
-  background: rgba(255, 255, 255, 0.95);
-  font-size: 14px;
+  background: #f4f6f4;
+  color: var(--emerald-jewel);
+}
+
+.stash-card__photo {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.stash-card__name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding: 0 2px;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 1.3;
   color: var(--text-primary);
 }
 
-.list-inventory__rename:focus-visible {
-  outline: 2px solid var(--emerald-jewel);
-  outline-offset: 1px;
+/* ── Pack toggle on an item ── */
+
+.stash-pack-toggle {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
-/*
- * The whole row is the affordance — one tap opens the editor below, replacing
- * the old pencil/tag/trash trio and giving the item name the full width.
- */
-.list-inventory__hit {
-  flex: 1;
-  min-width: 0;
+.stash-pack-toggle:hover {
+  background: rgba(13, 168, 92, 0.08);
+  color: var(--emerald-deep);
+}
+
+.stash-pack-toggle--on {
+  color: var(--emerald-jewel);
+}
+
+.stash-card-cell .stash-pack-toggle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+}
+
+.stash-card-cell .stash-pack-toggle--on {
+  color: var(--emerald-jewel);
+}
+
+/* ── Item editor: name · category · trash, one row ── */
+
+.stash-editor {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 6px;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.stash-card--editing .stash-editor {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 6px;
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.stash-card--editing .stash-editor__input {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+
+.stash-card--editing .stash-editor__select {
+  max-width: none;
+  min-width: 0;
+  justify-self: start;
+}
+
+.stash-card--editing .stash-editor__remove {
+  justify-self: end;
+}
+
+.stash-editor__input {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-nested);
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid rgba(13, 168, 92, 0.28);
   border-radius: 8px;
-  background: none;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.stash-editor__input:focus,
+.stash-editor__input:focus-visible {
+  outline: none;
+  border-color: var(--emerald-jewel);
+  box-shadow: 0 0 0 3px rgba(13, 168, 92, 0.14);
+}
+
+.stash-editor__select {
+  appearance: none;
+  flex: 0 0 auto;
+  max-width: 7.25rem;
+  height: var(--control-nested);
+  border: 1px solid rgba(13, 168, 92, 0.28);
+  border-radius: 8px;
+  background-color: #fff;
+  padding: 0 24px 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%232f2f2f' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.stash-editor__select:focus,
+.stash-editor__select:focus-visible {
+  outline: none;
+  border-color: var(--emerald-jewel);
+  box-shadow: 0 0 0 3px rgba(13, 168, 92, 0.14);
+}
+
+.stash-editor__remove {
+  flex-shrink: 0;
+  width: var(--control-nested);
+  height: var(--control-nested);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  text-align: left;
+  border-radius: 8px;
+  background: transparent;
+  color: #b91c1c;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
-.list-inventory__hit:hover {
-  background: rgba(13, 168, 92, 0.06);
+.stash-editor__remove:hover {
+  background: rgba(185, 28, 28, 0.08);
 }
 
-.list-inventory__hit:focus-visible {
-  outline: 2px solid var(--emerald-jewel);
-  outline-offset: 1px;
-}
-
-/* Shown only in mixed lists (All / search), where the category adds context */
-.list-inventory__tag {
+.stash__add {
   flex-shrink: 0;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(13, 168, 92, 0.09);
-  color: var(--emerald-deep);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.list-inventory__done {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  color: var(--emerald-deep);
-  background: var(--emerald-mist);
-  cursor: pointer;
-}
-
-.list-inventory__done:hover {
-  background: rgba(13, 168, 92, 0.18);
-}
-
-.list-inventory__editor {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 8px 2px 2px 6px;
-  padding-top: 9px;
-  border-top: 1px dashed rgba(13, 168, 92, 0.2);
-  animation: move-row-in 0.15s ease-out;
-}
-
-.list-inventory__remove {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 11px;
-  border-radius: 999px;
-  border: 1px solid rgba(185, 28, 28, 0.22);
-  background: rgba(185, 28, 28, 0.05);
-  color: #b91c1c;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.list-inventory__remove:hover {
-  border-color: rgba(185, 28, 28, 0.4);
-  background: rgba(185, 28, 28, 0.1);
-}
-
-.list-inventory__move {
-  display: flex;
-  align-items: baseline;
   gap: 8px;
-}
-
-@keyframes move-row-in {
-  from {
-    opacity: 0;
-    transform: translateY(-3px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.list-inventory__move-label {
-  flex-shrink: 0;
   padding-top: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-muted);
 }
 
-.list-inventory__move-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.list-inventory__move-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(13, 168, 92, 0.2);
-  background: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.list-inventory__move-chip:hover {
-  border-color: var(--emerald-jewel);
-  background: var(--emerald-mist);
-  color: var(--emerald-deep);
-}
-
-.list-inventory__move-chip--current {
-  border-color: rgba(13, 168, 92, 0.35);
-  background: var(--emerald-mist);
-  color: var(--emerald-deep);
-  cursor: default;
-}
-
-.list-inventory__add {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(13, 168, 92, 0.1);
-}
-
-.list-inventory__notice {
+.stash__notice {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -3340,52 +3728,57 @@
   line-height: 1.4;
 }
 
-.list-inventory__notice svg {
+.stash__notice svg {
   flex-shrink: 0;
   margin-top: 1px;
 }
 
-.list-inventory__notice strong {
+.stash__notice strong {
   font-weight: 600;
 }
 
-.list-inventory__add-bar {
+.stash__add-bar {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px;
-  border-radius: 999px;
-  border: 1px solid rgba(13, 168, 92, 0.16);
-  background: rgba(255, 255, 255, 0.72);
+  gap: 8px;
+  padding: 6px 6px 6px 8px;
+  border-radius: var(--field-radius);
+  border: var(--field-border);
+  background: var(--field-fill);
 }
 
-.list-inventory__photo {
+.stash__add-bar:focus-within {
+  border-color: rgba(13, 168, 92, 0.4);
+  box-shadow: 0 0 0 2px rgba(13, 168, 92, 0.12);
+}
+
+.stash__photo {
   position: relative;
   flex-shrink: 0;
   display: flex;
   align-items: center;
 }
 
-.list-inventory__photo-trigger {
+.stash__photo-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: var(--control-nested);
+  height: var(--control-nested);
+  border-radius: 50%;
   border: none;
   background: transparent;
   color: var(--text-muted);
 }
 
-.list-inventory__photo-trigger:hover,
-.list-inventory__photo-trigger--open {
+.stash__photo-trigger:hover,
+.stash__photo-trigger--open {
   background: var(--emerald-mist);
   color: var(--emerald-deep);
 }
 
-.list-inventory__photo-menu {
+.stash__photo-menu {
   position: absolute;
   bottom: calc(100% + 8px);
   left: 0;
@@ -3412,7 +3805,7 @@
   }
 }
 
-.list-inventory__photo-option {
+.stash__photo-option {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -3426,17 +3819,17 @@
   text-align: left;
 }
 
-.list-inventory__photo-option:hover {
+.stash__photo-option:hover {
   background: var(--emerald-mist);
   color: var(--emerald-deep);
 }
 
-.list-inventory__photo-option svg {
+.stash__photo-option svg {
   flex-shrink: 0;
   color: var(--emerald-jewel);
 }
 
-.list-inventory__photo-chip {
+.stash__photo-chip {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -3446,7 +3839,7 @@
   background: var(--emerald-mist);
 }
 
-.list-inventory__photo-chip img {
+.stash__photo-chip img {
   width: 34px;
   height: 34px;
   border-radius: 8px;
@@ -3454,7 +3847,7 @@
   flex-shrink: 0;
 }
 
-.list-inventory__photo-chip-text {
+.stash__photo-chip-text {
   flex: 1;
   min-width: 0;
   font-size: 12px;
@@ -3462,7 +3855,7 @@
   color: var(--emerald-deep);
 }
 
-.list-inventory__photo-chip-text span {
+.stash__photo-chip-text span {
   display: block;
   font-size: 11px;
   font-weight: 500;
@@ -3472,7 +3865,7 @@
   text-overflow: ellipsis;
 }
 
-.list-inventory__photo-chip-close {
+.stash__photo-chip-close {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -3485,12 +3878,12 @@
   color: var(--text-muted);
 }
 
-.list-inventory__photo-chip-close:hover {
+.stash__photo-chip-close:hover {
   background: rgba(255, 255, 255, 0.8);
   color: var(--text-primary);
 }
 
-.list-inventory__photo-spinner {
+.stash__photo-spinner {
   animation: photo-spin 0.9s linear infinite;
 }
 
@@ -3500,87 +3893,37 @@
   }
 }
 
-.list-inventory__add-input {
+.stash__add-input {
   flex: 1;
   min-width: 0;
-  padding: 8px 10px;
+  min-height: var(--control-nested);
+  padding: 5px 4px;
   border: none;
   background: transparent;
-  font-size: 14px;
+  font-size: var(--field-text);
+  font-weight: 400;
+  line-height: var(--field-leading);
   color: var(--text-primary);
 }
 
-.list-inventory__add-input::placeholder {
+.stash__add-input::placeholder {
   color: var(--text-muted);
+  font-weight: 400;
 }
 
-.list-inventory__add-input:focus-visible {
+.stash__add-input:focus-visible {
   outline: none;
 }
 
-.list-inventory__add-select {
-  appearance: none;
-  flex-shrink: 0;
-  align-self: center;
-  border: none;
-  border-radius: 999px;
-  background-color: var(--emerald-mist);
-  padding: 6px 24px 6px 10px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--emerald-deep);
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23046b3c' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-}
-
-.list-inventory__add-select:focus-visible {
-  outline: 2px solid var(--emerald-jewel);
-  outline-offset: 1px;
-}
-
-.list-inventory__add-submit {
-  flex-shrink: 0;
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  color: var(--text-on-emerald);
-  background: linear-gradient(
-    135deg,
-    var(--emerald-jewel) 0%,
-    var(--emerald-deep) 100%
-  );
-  transition: opacity 0.15s ease;
-}
-
-.list-inventory__add-submit:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* ── Game style inventory (option 2) ── */
-
-.game-inv {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-height: 0;
-  height: 100%;
-  overflow-y: auto;
-}
+/* ── Pack board ── */
 
 /* Six base rows so the outer columns can split in halves (3 rows each) while
    the right column splits in thirds (2 rows each), keeping every edge aligned. */
-.game-inv__loadout {
-  flex-shrink: 0;
+.pack-board {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(6, minmax(42px, 1fr));
+  grid-template-rows: repeat(6, minmax(32px, 1fr));
+  /* Even gap so 2-row slots (gear/accessories/other) have even pixel height. */
   gap: 8px;
   padding: 12px;
   border-radius: 16px;
@@ -3589,50 +3932,50 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.game-inv__slot--innerwear {
+.pack-board__cell--innerwear {
   grid-column: 1;
   grid-row: 1 / 4;
 }
 
-.game-inv__slot--footwear {
+.pack-board__cell--footwear {
   grid-column: 1;
   grid-row: 4 / 7;
 }
 
-.game-inv__slot--top {
+.pack-board__cell--top {
   grid-column: 2;
   grid-row: 1 / 4;
 }
 
-.game-inv__slot--bottom {
+.pack-board__cell--bottom {
   grid-column: 2;
   grid-row: 4 / 7;
 }
 
-.game-inv__slot--gear {
+.pack-board__cell--gear {
   grid-column: 3;
   grid-row: 1 / 3;
 }
 
-.game-inv__slot--accessories {
+.pack-board__cell--accessories {
   grid-column: 3;
   grid-row: 3 / 5;
 }
 
-.game-inv__slot--other {
+.pack-board__cell--other {
   grid-column: 3;
   grid-row: 5 / 7;
 }
 
-.game-inv__slot {
+.pack-board__cell {
   min-height: 0;
   min-width: 0;
 }
 
-.game-inv__equip {
+.pack-board__slot {
   width: 100%;
   height: 100%;
-  min-height: 52px;
+  min-height: 48px;
   padding: 4px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -3647,33 +3990,81 @@
     transform 0.15s ease;
 }
 
-.game-inv__slot-empty {
+.pack-board__slot--filled {
+  border-color: rgba(13, 168, 92, 0.45);
+  background: rgba(13, 168, 92, 0.12);
+}
+
+.pack-board__slot--highlight {
+  border-color: var(--cream);
+  box-shadow: 0 0 0 2px rgba(250, 250, 198, 0.35);
+  transform: scale(1.02);
+}
+
+.pack-board__empty {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 4px;
+  gap: 4px;
+  padding: 0;
   min-height: 0;
 }
 
-.game-inv__slot-icon {
+/* Fixed 24×24 — never shrink or stretch with the slot, so gear/accessories/
+   other (shorter cells) match innerwear/top at the native Tabler grid. */
+.pack-board__empty-icon {
+  display: block;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  line-height: 0;
+  overflow: visible;
   color: rgba(255, 255, 255, 0.38);
-  flex-shrink: 0;
 }
 
-.game-inv__slot-label {
+.pack-board__empty-icon svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+  overflow: visible;
+}
+
+.pack-board__empty-label {
+  flex: 0 0 12px;
+  height: 12px;
+  min-height: 12px;
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   text-align: center;
   color: rgba(255, 255, 255, 0.45);
+  line-height: 12px;
+}
+
+/* A filled slot keeps its label so the board never loses its legend. */
+.pack-board__packed {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+}
+
+.pack-board__packed-label {
+  flex-shrink: 0;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
   line-height: 1.2;
 }
 
-.game-inv__slot-items {
+.pack-board__items {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
@@ -3683,146 +4074,49 @@
   overflow: auto;
 }
 
-.game-inv__slot-items--compact {
+.pack-board__items--compact,
+.pack-board__items--dense {
   gap: 2px;
 }
 
-.game-inv__slot-items--dense {
-  gap: 2px;
-}
-
-.game-inv__slot-item {
+.pack-board__item {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 2px;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.92);
-  overflow: hidden;
-  transition: transform 0.12s ease;
-}
-
-.game-inv__slot-items--normal .game-inv__slot-item {
-  width: calc(50% - 2px);
-  aspect-ratio: 1;
-}
-
-.game-inv__slot-items--compact .game-inv__slot-item {
-  width: calc(33.333% - 2px);
-  aspect-ratio: 1;
-}
-
-.game-inv__slot-items--dense .game-inv__slot-item {
-  width: calc(25% - 2px);
-  aspect-ratio: 1;
-}
-
-.game-inv__slot-item:active {
-  transform: scale(0.94);
-}
-
-.game-inv__slot-item-initials {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--emerald-deep);
+  overflow: hidden;
+  transition: transform 0.12s ease;
 }
 
-.game-inv__equip--filled {
-  border-color: rgba(13, 168, 92, 0.45);
-  background: rgba(13, 168, 92, 0.12);
+.pack-board__items--normal .pack-board__item {
+  width: calc(50% - 2px);
+  aspect-ratio: 1;
 }
 
-.game-inv__equip--highlight {
-  border-color: var(--cream);
-  box-shadow: 0 0 0 2px rgba(250, 250, 198, 0.35);
-  transform: scale(1.02);
+.pack-board__items--compact .pack-board__item {
+  width: calc(33.333% - 2px);
+  aspect-ratio: 1;
 }
 
-.game-inv__equip-img {
+.pack-board__items--dense .pack-board__item {
+  width: calc(25% - 2px);
+  aspect-ratio: 1;
+}
+
+.pack-board__item:active {
+  transform: scale(0.94);
+}
+
+.pack-board__item img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
-}
-
-.game-inv__stash-hint {
-  margin: 0;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.game-inv__stash {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.game-inv__tabs {
-  margin: 0;
-}
-
-.game-inv__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.game-inv__empty {
-  grid-column: 1 / -1;
-  margin: 0;
-  padding: 20px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.game-inv__card {
-  aspect-ratio: 1.45 / 1;
-  padding: 6px;
-  border-radius: 10px;
-  border: 1px solid rgba(13, 168, 92, 0.14);
-  background: #fff;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
-}
-
-.game-inv__card:hover {
-  box-shadow: 0 4px 14px rgba(13, 168, 92, 0.12);
-}
-
-.game-inv__card:active {
-  transform: scale(0.97);
-}
-
-.game-inv__card-glyph {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: rgba(13, 168, 92, 0.06);
-  color: var(--emerald-jewel);
-}
-
-.game-inv__card-name {
-  flex-shrink: 0;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.2;
-  color: #1a1a1a;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }

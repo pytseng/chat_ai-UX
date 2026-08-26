@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
-import { CloseIcon, PlusIcon } from "./Icons";
+import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { type ChatThread } from "../lib/chatHistoryStorage";
 import {
   GENDER_OPTIONS,
@@ -51,6 +51,7 @@ export function ChatHistoryDrawer({
   const [rendered, setRendered] = useState(open);
   const [closing, setClosing] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [editingRecents, setEditingRecents] = useState(false);
   const [gender, setGender] = useState<GenderPreference | null>(
     preferences?.gender ?? null
   );
@@ -70,6 +71,10 @@ export function ChatHistoryDrawer({
   }, [open, preferences]);
 
   useEffect(() => {
+    if (threads.length === 0) setEditingRecents(false);
+  }, [threads.length]);
+
+  useEffect(() => {
     if (closeTimerRef.current != null) {
       window.clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
@@ -78,6 +83,7 @@ export function ChatHistoryDrawer({
     if (open) {
       setRendered(true);
       setClosing(false);
+      setEditingRecents(false);
       return;
     }
 
@@ -88,6 +94,7 @@ export function ChatHistoryDrawer({
       setRendered(false);
       setClosing(false);
       setEditingProfile(false);
+      setEditingRecents(false);
       closeTimerRef.current = null;
     }, DRAWER_CLOSE_MS);
 
@@ -116,7 +123,7 @@ export function ChatHistoryDrawer({
         .join(" ")}
       role="dialog"
       aria-modal="true"
-      aria-label="Menu"
+      aria-label="SecretStash"
     >
       <button
         type="button"
@@ -128,7 +135,7 @@ export function ChatHistoryDrawer({
       <div className="chat-drawer__frame">
         <aside className="chat-drawer__panel">
           <div className="chat-drawer__header">
-            <h2 className="chat-drawer__title">Menu</h2>
+            <h2 className="chat-drawer__title">SecretStash</h2>
             <button
               type="button"
               className="chat-drawer__close"
@@ -136,7 +143,7 @@ export function ChatHistoryDrawer({
               aria-label="Close"
               disabled={closing}
             >
-              <CloseIcon />
+              <IconX aria-hidden />
             </button>
           </div>
 
@@ -150,7 +157,7 @@ export function ChatHistoryDrawer({
               }}
               disabled={closing}
             >
-              <PlusIcon />
+              <IconPlus aria-hidden />
               New chat
             </button>
           </section>
@@ -163,6 +170,17 @@ export function ChatHistoryDrawer({
               <h3 id="drawer-history-heading" className="chat-drawer__section-title">
                 Recents
               </h3>
+              {threads.length > 0 ? (
+                <button
+                  type="button"
+                  className="chat-drawer__section-edit"
+                  onClick={() => setEditingRecents((editing) => !editing)}
+                  aria-pressed={editingRecents}
+                  disabled={closing}
+                >
+                  {editingRecents ? "Done" : "Edit"}
+                </button>
+              ) : null}
             </div>
 
             {threads.length === 0 ? (
@@ -179,6 +197,7 @@ export function ChatHistoryDrawer({
                         className={[
                           "chat-drawer__item",
                           active ? "chat-drawer__item--active" : "",
+                          editingRecents ? "chat-drawer__item--editing" : "",
                         ]
                           .filter(Boolean)
                           .join(" ")}
@@ -187,6 +206,7 @@ export function ChatHistoryDrawer({
                           type="button"
                           className="chat-drawer__item-main"
                           onClick={() => {
+                            if (editingRecents) return;
                             onOpenChat(thread.id);
                             onClose();
                           }}
@@ -196,15 +216,17 @@ export function ChatHistoryDrawer({
                             {thread.title}
                           </span>
                         </button>
-                        <button
-                          type="button"
-                          className="chat-drawer__item-delete"
-                          onClick={() => onDeleteChat(thread.id)}
-                          aria-label={`Delete chat ${thread.title}`}
-                          disabled={closing}
-                        >
-                          <CloseIcon />
-                        </button>
+                        {editingRecents ? (
+                          <button
+                            type="button"
+                            className="chat-drawer__item-delete"
+                            onClick={() => onDeleteChat(thread.id)}
+                            aria-label={`Delete chat ${thread.title}`}
+                            disabled={closing}
+                          >
+                            <IconTrash size={16} stroke={1.9} aria-hidden />
+                          </button>
+                        ) : null}
                       </div>
                     </li>
                   );

@@ -4,16 +4,14 @@ import {
   useMemo,
   useRef,
   useState,
-  type ComponentType,
 } from "react";
 import {
-  Backpack,
-  CircleMinus,
-  Glasses,
-  Package,
-  RotateCcw,
-  Shirt,
-} from "lucide-react";
+  IconChevronDown,
+  IconCircleMinus,
+  IconMinus,
+  IconPlus,
+  IconRotate,
+} from "@tabler/icons-react";
 import type {
   PackSuggestion,
   SuggestionCategoryId,
@@ -27,14 +25,7 @@ import {
   formatPreferencesForSearch,
   type UserPreferences,
 } from "../lib/userPreferences";
-import {
-  BootIcon,
-  ChevronDownIcon,
-  PlusIcon,
-  MinusIcon,
-  TankTopIcon,
-  TrousersIcon,
-} from "./Icons";
+import { CATEGORY_ICONS } from "./categoryIcons";
 
 type SuggestionItemsProps = {
   items: PackSuggestion[];
@@ -62,18 +53,6 @@ type ItemState = {
   loading: boolean;
   error: string | null;
   products: ImageSearchResult[];
-};
-
-type CategoryIcon = ComponentType<{ className?: string }>;
-
-const CATEGORY_ICONS: Record<SuggestionCategoryId, CategoryIcon> = {
-  top: ({ className }) => <Shirt className={className} strokeWidth={1.75} aria-hidden />,
-  bottom: ({ className }) => <TrousersIcon className={className} strokeWidth={1.75} />,
-  footwear: ({ className }) => <BootIcon className={className} strokeWidth={1.75} />,
-  innerwear: ({ className }) => <TankTopIcon className={className} strokeWidth={1.75} />,
-  accessories: ({ className }) => <Glasses className={className} strokeWidth={1.75} aria-hidden />,
-  gear: ({ className }) => <Backpack className={className} strokeWidth={1.75} aria-hidden />,
-  other: ({ className }) => <Package className={className} strokeWidth={1.75} aria-hidden />,
 };
 
 /** Short labels so tabs fit on a phone width. */
@@ -242,7 +221,7 @@ export function SuggestionItems({
                     .join(" ")}
                   onClick={() => selectTab(section.id)}
                 >
-                  <Icon className="pack-tabs__icon" />
+                  <Icon className="pack-tabs__icon" strokeWidth={1.75} />
                   <span>{TAB_LABELS[section.id]}</span>
                   <span className="pack-tabs__count">{section.items.length}</span>
                 </button>
@@ -271,6 +250,7 @@ export function SuggestionItems({
                       name: product.name,
                       imageUrl: product.imageUrl,
                       categoryTitle: `${item.categoryLabel} · ${item.title}`,
+                      categoryId: item.categoryId,
                       sourceUrl: product.sourceUrl,
                       price: product.price,
                     })
@@ -304,7 +284,7 @@ export function SuggestionItems({
             aria-expanded={ownedOpen}
           >
             <span>Already have · {ownedItems.length}</span>
-            <ChevronDownIcon />
+            <IconChevronDown aria-hidden />
           </button>
 
           {ownedOpen && (
@@ -322,7 +302,7 @@ export function SuggestionItems({
                       aria-label={`Move ${item.title} back to suggestions`}
                       title="Add back to list"
                     >
-                      <RotateCcw size={16} strokeWidth={1.75} aria-hidden />
+                      <IconRotate size={16} stroke={1.75} aria-hidden />
                     </button>
                   </div>
                 </li>
@@ -375,7 +355,7 @@ function SuggestionRow({
           aria-label={`Mark ${item.title} as already owned`}
           title="I already have this"
         >
-          <CircleMinus size={16} strokeWidth={1.75} aria-hidden />
+          <IconCircleMinus size={16} stroke={1.75} aria-hidden />
         </button>
         <button
           type="button"
@@ -405,7 +385,7 @@ function SuggestionRow({
           aria-label={`${isOpen ? "Hide" : "Show"} details for ${item.title}`}
           tabIndex={-1}
         >
-          <ChevronDownIcon />
+          <IconChevronDown aria-hidden />
         </button>
       </div>
 
@@ -491,7 +471,7 @@ function ProductThumb({
           }
           title={saved ? "Remove from cart" : "Add to cart"}
         >
-          {saved ? <MinusIcon /> : <PlusIcon />}
+          {saved ? <IconMinus aria-hidden /> : <IconPlus aria-hidden />}
         </button>
       </div>
       <figcaption>

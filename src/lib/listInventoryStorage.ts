@@ -11,6 +11,10 @@ export type ListInventoryItem = {
   id: string;
   name: string;
   category: ListInventoryCategory;
+  /** R2 object key for a product photo, when the item has one. */
+  imageKey?: string;
+  /** Absolute photo URL from a purchased search result. */
+  imageUrl?: string;
 };
 
 /** Canonical taxonomy — shared by the inventory views, the loadout grid and
@@ -159,6 +163,87 @@ export function loadListInventory(): ListInventoryItem[] {
 
 export function persistListInventory(items: ListInventoryItem[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
+let liveItems = loadListInventory();
+const inventoryListeners = new Set<() => void>();
+
+export function subscribeListInventory(listener: () => void) {
+  inventoryListeners.add(listener);
+  return () => {
+    inventoryListeners.delete(listener);
+  };
+}
+
+export function getListInventory(): ListInventoryItem[] {
+  return liveItems;
+}
+
+export function setListInventory(
+  next:
+    | ListInventoryItem[]
+    | ((prev: ListInventoryItem[]) => ListInventoryItem[])
+) {
+  liveItems = typeof next === "function" ? next(liveItems) : next;
+  persistListInventory(liveItems);
+  inventoryListeners.forEach((listener) => listener());
+}
+
+export function addListInventoryItems(items: ListInventoryItem[]) {
+  if (items.length === 0) return;
+  setListInventory((prev) => {
+    let next = prev;
+    for (const item of items) {
+      next = insertListInventoryItem(next, item, true);
+    }
+    return next;
+  });
+}
+
+const PURCHASE_CATEGORY_ALIASES: Record<string, ListInventoryCategory> = {
+  "top layer": "top",
+  "bottom layer": "bottom",
+  "more items": "other",
+};
+
+function categoryFromPurchaseHint(hint?: string): ListInventoryCategory | undefined {
+  const raw = hint?.split(/[·•|]/)[0]?.trim().toLowerCase() ?? "";
+  if (!raw) return undefined;
+
+  const exact = LIST_INVENTORY_CATEGORIES.find(
+    (entry) => entry.label.toLowerCase() === raw || entry.id === raw
+  );
+  if (exact) return exact.id;
+
+  const aliased = PURCHASE_CATEGORY_ALIASES[raw];
+  if (aliased) return aliased;
+
+  return LIST_INVENTORY_CATEGORIES.find(
+    (entry) =>
+      raw.startsWith(entry.label.toLowerCase()) || raw.startsWith(entry.id)
+  )?.id;
+}
+
+/** Map a purchased search product onto the owned stash list. */
+export function inventoryItemFromPurchase(input: {
+  name: string;
+  categoryId?: string;
+  categoryHint?: string;
+  imageUrl?: string;
+}): ListInventoryItem {
+  const fromId = LIST_INVENTORY_CATEGORIES.find(
+    (entry) => entry.id === input.categoryId
+  )?.id;
+
+  return {
+    id: `buy-${crypto.randomUUID()}`,
+    name: input.name,
+    category:
+      fromId ??
+      categoryFromPurchaseHint(input.categoryHint) ??
+      classifyInventoryItem(input.name),
+    imageUrl: input.imageUrl || undefined,
+  };
 }
 
 export function reorderListInventoryCategory(

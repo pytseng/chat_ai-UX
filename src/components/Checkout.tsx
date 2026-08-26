@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDownIcon, ChevronRightIcon } from "./Icons";
+import { IconChevronDown, IconChevronRight } from "@tabler/icons-react";
 import {
   EXPRESS_METHODS,
   cardBrand,
@@ -59,7 +59,7 @@ export function CheckoutView({
             {formatAddressLine(address)}
           </span>
         </span>
-        <ChevronRightIcon />
+        <IconChevronRight aria-hidden />
       </button>
 
       {!addressReady ? (
@@ -100,7 +100,7 @@ export function CheckoutView({
             <span className="checkout__card-brand">{brand}</span>
           ) : null}
         </span>
-        <ChevronDownIcon />
+        <IconChevronDown aria-hidden />
       </button>
 
       {cardOpen ? (

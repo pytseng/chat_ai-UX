@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CheckIcon, ChevronLeftIcon, CloseIcon } from "./Icons";
+import { IconCheck, IconChevronLeft, IconX } from "@tabler/icons-react";
 import { AddressForm, CheckoutView } from "./Checkout";
 import type { SavedProduct } from "../lib/savedProductsStorage";
 import {
@@ -10,6 +10,10 @@ import {
   type CardFields,
   type PayMethod,
 } from "../lib/mockCheckout";
+import {
+  addListInventoryItems,
+  inventoryItemFromPurchase,
+} from "../lib/listInventoryStorage";
 import {
   loadShippingAddress,
   persistShippingAddress,
@@ -129,7 +133,16 @@ export function SavedStashPanel({
   const handlePay = (method: PayMethod) => {
     if (paying || items.length === 0) return;
     setPayingMethod(method);
+    const purchased = items.map((item) =>
+      inventoryItemFromPurchase({
+        name: item.name,
+        categoryId: item.categoryId,
+        categoryHint: item.categoryTitle,
+        imageUrl: item.imageUrl,
+      })
+    );
     payTimerRef.current = window.setTimeout(() => {
+      addListInventoryItems(purchased);
       setPaidTotal(total);
       setPaidMethod(method);
       setOrderId(mockOrderId());
@@ -178,7 +191,7 @@ export function SavedStashPanel({
               aria-label={`Back to ${STEP_TITLES[backStep].toLowerCase()}`}
               disabled={paying}
             >
-              <ChevronLeftIcon />
+              <IconChevronLeft aria-hidden />
             </button>
           ) : null}
           <h2 className="stash-panel__title">
@@ -194,7 +207,7 @@ export function SavedStashPanel({
             aria-label="Close"
             disabled={closing || paying}
           >
-            <CloseIcon />
+            <IconX aria-hidden />
           </button>
         </div>
 
@@ -233,7 +246,7 @@ export function SavedStashPanel({
                       aria-label={`Remove ${item.name}`}
                       disabled={closing}
                     >
-                      <CloseIcon />
+                      <IconX aria-hidden />
                     </button>
                   </li>
                 ))}
@@ -279,7 +292,7 @@ export function SavedStashPanel({
         {step === "success" ? (
           <div className="stash-success">
             <div className="stash-success__mark" aria-hidden>
-              <CheckIcon />
+              <IconCheck aria-hidden />
             </div>
             <p className="stash-success__title">Payment received</p>
             <p className="stash-success__copy">
@@ -288,6 +301,7 @@ export function SavedStashPanel({
             <p className="stash-success__order">
               Order {orderId} · ships to {address.city}
             </p>
+            <p className="stash-success__stash">Added to your Stash</p>
             <button
               type="button"
               className="stash-checkout__cta"

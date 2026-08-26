@@ -3,7 +3,7 @@ import { streamChat, type Message, type ReasoningStatus } from "./api/chat";
 import { ChatHistoryDrawer } from "./components/ChatHistoryDrawer";
 import { ChatInput, MessageList } from "./components/Chat";
 import { LiquidBackground } from "./components/LiquidBackground";
-import { MenuIcon, ChestIcon } from "./components/Icons";
+import { IconMenu2, IconTreasureChest } from "@tabler/icons-react";
 import { InventoryPanel } from "./components/InventoryPanel";
 import { SavedStashPanel } from "./components/SavedStashPanel";
 import { useChatHistory } from "./hooks/useChatHistory";
@@ -273,16 +273,9 @@ export default function App() {
               onClick={() => setDrawerOpen(true)}
               aria-label="Open menu"
             >
-              <MenuIcon />
+              <IconMenu2 aria-hidden />
             </button>
-            <button
-              type="button"
-              className="header__title"
-              onClick={handleNewChat}
-              aria-label="Go to home, start new chat"
-            >
-              SecretStash
-            </button>
+            <h1 className="sr-only">SecretStash</h1>
           </div>
           <div className="header__trailing">
             <button
@@ -292,7 +285,7 @@ export default function App() {
               aria-label="Open stash"
               aria-expanded={inventoryOpen}
             >
-              <ChestIcon />
+              <IconTreasureChest aria-hidden />
             </button>
           </div>
         </header>

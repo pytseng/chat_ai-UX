@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  type KeyboardEvent,
+} from "react";
 import { getSuggestionsFromContent } from "../../lib/suggestions";
 import type { Message, ReasoningStatus } from "../api/chat";
 import { ReasoningUI } from "./ReasoningUI";
@@ -9,13 +15,31 @@ import { PreferencePrompt } from "./PreferencePrompt";
 import { WeatherWidget } from "./WeatherWidget";
 import type { UserPreferences } from "../lib/userPreferences";
 import {
-  ArrowUpIcon,
-  CartIcon,
-  CodeIcon,
-  ImageIcon,
-  MicIcon,
-  StopIcon,
-} from "./Icons";
+  IconArrowUp,
+  IconPlayerStopFilled,
+  IconShoppingCart,
+} from "@tabler/icons-react";
+
+/** Matches .chat-box__field min-height so an empty field stays one line. */
+const FIELD_MIN_PX = 32;
+
+/**
+ * Cap the field so the whole composer never covers the header and never
+ * grows past half of the messages region (the space under the toolbar).
+ */
+function measureFieldMax(area: HTMLElement, field: HTMLElement): number {
+  const phone = area.closest(".phone");
+  const header = phone?.querySelector(".header");
+  const phoneH =
+    phone instanceof HTMLElement ? phone.clientHeight : window.innerHeight;
+  const headerH =
+    header instanceof HTMLElement ? header.getBoundingClientRect().height : 48;
+  const contentH = Math.max(0, phoneH - headerH);
+
+  const chrome = Math.max(0, area.offsetHeight - field.offsetHeight);
+  const maxArea = Math.min(contentH * 0.5, Math.max(0, contentH - 8));
+  return Math.max(FIELD_MIN_PX, Math.floor(maxArea - chrome));
+}
 
 /** Current / immediate timing. */
 const SUGGESTIONS_NOW = [
@@ -92,15 +116,41 @@ export function ChatInput({
   disabled = false,
   cart,
 }: ChatInputProps) {
+  const areaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const canSend = value.trim().length > 0 && !isGenerating && !disabled;
 
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  }, [value]);
+  useLayoutEffect(() => {
+    const area = areaRef.current;
+    const field = textareaRef.current;
+    if (!area || !field) return;
+
+    const sync = () => {
+      const cap = measureFieldMax(area, field);
+      field.style.maxHeight = `${cap}px`;
+      field.style.height = "auto";
+      field.style.height = `${Math.min(field.scrollHeight, cap)}px`;
+
+      const phone = area.closest(".phone");
+      if (phone instanceof HTMLElement) {
+        phone.style.setProperty("--composer-offset", `${area.offsetHeight}px`);
+      }
+    };
+
+    sync();
+
+    const ro = new ResizeObserver(sync);
+    const phone = area.closest(".phone");
+    if (phone) ro.observe(phone);
+    const header = phone?.querySelector(".header");
+    if (header) ro.observe(header);
+    window.addEventListener("resize", sync);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", sync);
+    };
+  }, [value, cart]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -110,7 +160,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="input-area">
+    <div className="input-area" ref={areaRef}>
       {cart ? (
         <div className="input-area__cart">
           <button
@@ -121,7 +171,7 @@ export function ChatInput({
               cart.count === 1 ? "item" : "items"
             }`}
           >
-            <CartIcon />
+            <IconShoppingCart aria-hidden />
             <span className="cart-btn__label">Cart</span>
             <span className="cart-btn__badge">
               {cart.count > 99 ? "99+" : cart.count}
@@ -145,57 +195,26 @@ export function ChatInput({
           disabled={disabled || isGenerating}
           aria-label="Message"
         />
-        <div className="chat-box__toolbar">
-          <div className="chat-box__actions">
-            <button
-              type="button"
-              className="icon-btn"
-              disabled
-              aria-label="Attach image (coming soon)"
-              title="Coming soon"
-            >
-              <ImageIcon />
-            </button>
-            <button
-              type="button"
-              className="icon-btn"
-              disabled
-              aria-label="Code mode (coming soon)"
-              title="Coming soon"
-            >
-              <CodeIcon />
-            </button>
-            <button
-              type="button"
-              className="icon-btn"
-              disabled
-              aria-label="Voice input (coming soon)"
-              title="Coming soon"
-            >
-              <MicIcon />
-            </button>
-          </div>
-          {isGenerating ? (
-            <button
-              type="button"
-              className="send-btn send-btn--stop"
-              onClick={onStop}
-              aria-label="Stop generating"
-            >
-              <StopIcon />
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="send-btn"
-              onClick={onSend}
-              disabled={!canSend}
-              aria-label="Send message"
-            >
-              <ArrowUpIcon />
-            </button>
-          )}
-        </div>
+        {isGenerating ? (
+          <button
+            type="button"
+            className="send-btn send-btn--stop"
+            onClick={onStop}
+            aria-label="Stop generating"
+          >
+            <IconPlayerStopFilled aria-hidden />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="send-btn"
+            onClick={onSend}
+            disabled={!canSend}
+            aria-label="Send message"
+          >
+            <IconArrowUp aria-hidden />
+          </button>
+        )}
       </div>
     </div>
   );

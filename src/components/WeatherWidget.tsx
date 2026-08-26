@@ -1,4 +1,11 @@
-import { Cloud, CloudRain, CloudSnow, Info, Sun, Zap } from "lucide-react";
+import {
+  IconBolt,
+  IconCloud,
+  IconCloudRain,
+  IconCloudSnow,
+  IconInfoCircle,
+  IconSun,
+} from "@tabler/icons-react";
 import type { MonthClimate, WeatherResult } from "../../lib/weather";
 import { weatherDetailUrl } from "../../lib/weather";
 
@@ -14,14 +21,14 @@ function weekdayLabel(date: string): string {
 
 function ConditionIcon({ description }: { description: string }) {
   const d = description.toLowerCase();
-  const props = { size: 22, strokeWidth: 1.75, "aria-hidden": true as const };
-  if (d.includes("thunder")) return <Zap {...props} />;
-  if (d.includes("snow") || d.includes("rime")) return <CloudSnow {...props} />;
+  const props = { size: 22, stroke: 1.75, "aria-hidden": true as const };
+  if (d.includes("thunder")) return <IconBolt {...props} />;
+  if (d.includes("snow") || d.includes("rime")) return <IconCloudSnow {...props} />;
   if (d.includes("rain") || d.includes("drizzle") || d.includes("shower"))
-    return <CloudRain {...props} />;
+    return <IconCloudRain {...props} />;
   if (d.includes("clear") || d.includes("mainly clear"))
-    return <Sun {...props} />;
-  return <Cloud {...props} />;
+    return <IconSun {...props} />;
+  return <IconCloud {...props} />;
 }
 
 function ConfidenceMeter({ month }: { month: MonthClimate }) {
@@ -49,7 +56,7 @@ function ConfidenceMeter({ month }: { month: MonthClimate }) {
           aria-label={note}
           title={note}
         >
-          <Info size={13} strokeWidth={2} aria-hidden />
+          <IconInfoCircle size={13} stroke={2} aria-hidden />
           <span className="weather-confidence__tip" role="tooltip">
             {note}
           </span>

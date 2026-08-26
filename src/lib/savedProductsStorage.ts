@@ -3,6 +3,8 @@ export type SavedProduct = {
   name: string;
   imageUrl: string;
   categoryTitle: string;
+  /** Stash category id from search suggestions (`top`, `gear`, …). */
+  categoryId?: string;
   sourceUrl?: string;
   price?: number;
   savedAt: string;

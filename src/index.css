@@ -41,6 +41,9 @@ body,
   --text-primary: #2f2f2f;
   --text-secondary: #5c5c5c;
   --text-muted: #8a8a8a;
+  /* Sage-tinted hint — ~5.5:1 on --chat-surface. Cool gray on green glass
+     reads muddy and thinner than the same hex on white. */
+  --text-placeholder: #55615b;
   --text-on-emerald: #ffffff;
 
   /* Apple-like frosted / liquid glass */
@@ -88,6 +91,18 @@ body,
 
   --shadow-soft: 0 8px 32px rgba(51, 51, 51, 0.08);
   --shadow-emerald: 0 8px 28px rgba(13, 168, 92, 0.18);
+
+  /* Controls: one family, two jobs.
+     Chrome (36 circle + glass) = enter/leave a surface.
+     Nested (32 circle) = action inside a pill field. */
+  --control-chrome: 36px;
+  --control-nested: 32px;
+  --control-glyph: 20px;
+  --field-radius: 999px;
+  --field-border: 1px solid rgba(13, 168, 92, 0.16);
+  --field-fill: rgba(255, 255, 255, 0.72);
+  --field-text: 16px;
+  --field-leading: 1.375;
 }
 
 body {
@@ -115,4 +130,16 @@ textarea {
   outline: none;
   resize: none;
   background: transparent;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

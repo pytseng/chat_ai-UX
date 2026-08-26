@@ -7,6 +7,7 @@ node_modules/
 dist/
 scripts/.inventory-cache/
 scripts/.inventory-docs/
+scripts/.demo-stash-cache/
 .vercel
 .wrangler/
 tsconfig.tsbuildinfo
