@@ -1,5 +1,3 @@
-import { INVENTORY_CATALOG } from "./inventoryCatalog";
-
 export type ListInventoryCategory =
   | "top"
   | "bottom"
@@ -34,9 +32,10 @@ export function categoryLabel(id: ListInventoryCategory): string {
   return LIST_INVENTORY_CATEGORIES.find((entry) => entry.id === id)?.label ?? id;
 }
 
-const STORAGE_KEY = "secretstash-list-inventory-v3";
+const STORAGE_KEY = "secretstash-list-inventory-v4";
 
-const DEFAULT_ITEMS: ListInventoryItem[] = INVENTORY_CATALOG;
+/** The stash starts empty — every item is one the user actually added. */
+const DEFAULT_ITEMS: ListInventoryItem[] = [];
 
 /** Keyword scoring — highest score wins; ties break by CATEGORY_PRIORITY. */
 const CATEGORY_PRIORITY: ListInventoryCategory[] = [
@@ -89,9 +88,6 @@ export function classifyInventoryItem(name: string): ListInventoryCategory {
   const n = name.trim().toLowerCase();
   if (!n) return "other";
 
-  const fromCatalog = catalogCategoryForName(n);
-  if (fromCatalog) return fromCatalog;
-
   const scores = Object.fromEntries(
     CATEGORY_PRIORITY.map((cat) => [cat, 0])
   ) as Record<ListInventoryCategory, number>;
@@ -114,27 +110,6 @@ export function classifyInventoryItem(name: string): ListInventoryCategory {
   }
 
   return best;
-}
-
-function catalogCategoryForName(name: string): ListInventoryCategory | null {
-  const exact = INVENTORY_CATALOG.find((item) => item.name.toLowerCase() === name);
-  if (exact) return exact.category;
-
-  let bestMatch: ListInventoryItem | undefined;
-  let bestScore = 0;
-
-  for (const item of INVENTORY_CATALOG) {
-    const catalogName = item.name.toLowerCase();
-    if (!catalogName.includes(name) && !name.includes(catalogName)) continue;
-
-    const score = Math.min(catalogName.length, name.length);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = item;
-    }
-  }
-
-  return bestMatch?.category ?? null;
 }
 
 export function insertListInventoryItem(
@@ -174,7 +149,8 @@ export function loadListInventory(): ListInventoryItem[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_ITEMS;
     const parsed = JSON.parse(raw) as ListInventoryItem[];
-    if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_ITEMS;
+    // An empty stored array is a real state — the user removed everything.
+    if (!Array.isArray(parsed)) return DEFAULT_ITEMS;
     return parsed;
   } catch {
     return DEFAULT_ITEMS;

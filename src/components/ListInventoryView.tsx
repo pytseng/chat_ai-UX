@@ -5,8 +5,7 @@ import {
   GripVertical,
   ImagePlus,
   Loader,
-  Pencil,
-  Tag,
+  Search,
   Trash2,
   Upload,
   X,
@@ -56,6 +55,9 @@ function mockDetectFromPhoto() {
 
 type AddCategoryChoice = "auto" | ListInventoryCategory;
 
+/** "all" lets the stash be browsed whole, not just one category at a time. */
+type CategoryFilter = "all" | ListInventoryCategory;
+
 type InventoryNotice = {
   kind: "added" | "moved";
   itemName: string;
@@ -67,16 +69,15 @@ export function ListInventoryView() {
   const [items, setItems] = useState<ListInventoryItem[]>(() =>
     loadListInventory()
   );
-  const [category, setCategory] = useState<ListInventoryCategory>("top");
+  const [category, setCategory] = useState<CategoryFilter>("all");
   const [search, setSearch] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [draftName, setDraftName] = useState("");
   const [newItemName, setNewItemName] = useState("");
   const [addCategory, setAddCategory] = useState<AddCategoryChoice>("auto");
   const [addNotice, setAddNotice] = useState<InventoryNotice | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
-  const [movingId, setMovingId] = useState<string | null>(null);
   const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoName, setPhotoName] = useState("");
@@ -95,11 +96,11 @@ export function ListInventoryView() {
   }, [items]);
 
   useEffect(() => {
-    if (editingId && editInputRef.current) {
+    if (expandedId && editInputRef.current) {
       editInputRef.current.focus();
       editInputRef.current.select();
     }
-  }, [editingId]);
+  }, [expandedId]);
 
   useEffect(() => {
     return () => {
@@ -190,68 +191,95 @@ export function ListInventoryView() {
     }, SCAN_DELAY_MS);
   };
 
+  const query = search.trim().toLowerCase();
+  const searching = query.length > 0;
+
+  /** A query searches the whole stash — the category filter only scopes browsing. */
   const visibleItems = useMemo(() => {
-    const query = search.trim().toLowerCase();
     return items.filter((item) => {
-      if (item.category !== category) return false;
-      if (!query) return true;
-      return item.name.toLowerCase().includes(query);
+      if (query) return item.name.toLowerCase().includes(query);
+      return category === "all" || item.category === category;
     });
-  }, [category, items, search]);
+  }, [category, items, query]);
 
-  const startRename = (item: ListInventoryItem) => {
-    setEditingId(item.id);
-    setEditName(item.name);
-  };
+  // Manual order only means something within a single category's own list.
+  const canReorder = !searching && category !== "all";
+  // The category is only worth repeating when the list itself is mixed.
+  const showCategoryTag = searching || category === "all";
 
-  const commitRename = () => {
-    const trimmed = editName.trim();
-    if (!editingId) return;
-    if (trimmed) {
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === editingId ? { ...item, name: trimmed } : item
-        )
-      );
+  const counts = useMemo(() => {
+    const map = new Map<ListInventoryCategory, number>();
+    for (const item of items) {
+      map.set(item.category, (map.get(item.category) ?? 0) + 1);
     }
-    setEditingId(null);
-    setEditName("");
+    return map;
+  }, [items]);
+
+  const openEditor = (item: ListInventoryItem) => {
+    setExpandedId(item.id);
+    setDraftName(item.name);
   };
 
-  const cancelRename = () => {
-    setEditingId(null);
-    setEditName("");
+  /** Write the pending name into state; returns the name that will be stored. */
+  const flushDraft = (): string | null => {
+    if (!expandedId) return null;
+    const current = items.find((entry) => entry.id === expandedId);
+    if (!current) return null;
+
+    const trimmed = draftName.trim();
+    if (!trimmed || trimmed === current.name) return current.name;
+
+    setItems((prev) =>
+      prev.map((entry) =>
+        entry.id === expandedId ? { ...entry, name: trimmed } : entry
+      )
+    );
+    return trimmed;
+  };
+
+  const closeEditor = () => {
+    flushDraft();
+    setExpandedId(null);
+    setDraftName("");
   };
 
   const handleRenameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      commitRename();
+      closeEditor();
     }
     if (event.key === "Escape") {
       event.preventDefault();
-      cancelRename();
+      setExpandedId(null);
+      setDraftName("");
     }
   };
 
   const removeItem = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
-    if (editingId === id) cancelRename();
-    if (movingId === id) setMovingId(null);
+    if (expandedId === id) {
+      setExpandedId(null);
+      setDraftName("");
+    }
   };
 
-  const moveItem = (item: ListInventoryItem, next: ListInventoryCategory) => {
-    setMovingId(null);
-    if (item.category === next) return;
+  const moveItem = (id: string, next: ListInventoryCategory) => {
+    // Flush first so a pending rename isn't lost by the reinsert below.
+    const name = flushDraft();
+    setExpandedId(null);
+    setDraftName("");
 
-    setItems((prev) =>
-      insertListInventoryItem(
-        prev.filter((entry) => entry.id !== item.id),
-        { ...item, category: next },
+    setItems((prev) => {
+      const target = prev.find((entry) => entry.id === id);
+      if (!target || target.category === next) return prev;
+      return insertListInventoryItem(
+        prev.filter((entry) => entry.id !== id),
+        { ...target, category: next },
         true
-      )
-    );
-    showNotice("moved", item.name, next);
+      );
+    });
+
+    if (name) showNotice("moved", name, next);
   };
 
   const addItem = () => {
@@ -271,6 +299,7 @@ export function ListInventoryView() {
       )
     );
     setNewItemName("");
+    setSearch("");
     setCategory(placedCategory);
     showNotice("added", trimmed, placedCategory, autoSorted);
     clearPhoto();
@@ -300,12 +329,12 @@ export function ListInventoryView() {
   const handleDrop = (event: DragEvent<HTMLLIElement>, id: string) => {
     event.preventDefault();
     const fromId = draggingId ?? event.dataTransfer.getData("text/plain");
-    if (!fromId || fromId === id) return;
+    setDraggingId(null);
+    setDropTargetId(null);
+    if (!fromId || fromId === id || category === "all") return;
     setItems((prev) =>
       reorderListInventoryCategory(prev, category, fromId, id)
     );
-    setDraggingId(null);
-    setDropTargetId(null);
   };
 
   const handleDragEnd = () => {
@@ -313,62 +342,115 @@ export function ListInventoryView() {
     setDropTargetId(null);
   };
 
+  const emptyMessage = searching
+    ? `Nothing in your stash matches “${search.trim()}”.`
+    : category === "all"
+      ? "Your stash is empty. Add your first item below."
+      : `No ${categoryLabel(category).toLowerCase()} items yet.`;
+
   return (
     <div className="list-inventory">
       <div className="list-inventory__search-wrap">
-        <input
-          type="search"
-          className="list-inventory__search"
-          placeholder="Search items"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          aria-label="Search inventory items"
-        />
+        <div className="list-inventory__search-field">
+          <Search
+            size={15}
+            strokeWidth={2}
+            className="list-inventory__search-icon"
+            aria-hidden
+          />
+          <input
+            type="text"
+            className="list-inventory__search"
+            placeholder="Search your whole stash"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setExpandedId(null);
+            }}
+            aria-label="Search your whole stash"
+          />
+          {search ? (
+            <button
+              type="button"
+              className="list-inventory__search-clear"
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+            >
+              <X size={14} strokeWidth={2.25} aria-hidden />
+            </button>
+          ) : null}
+        </div>
       </div>
 
-      <div
-        className="pack-tabs list-inventory__tabs"
-        role="tablist"
-        aria-label="Inventory categories"
-      >
-        {LIST_INVENTORY_CATEGORIES.map((entry) => {
-          const count = items.filter((item) => item.category === entry.id).length;
-          const active = category === entry.id;
-          return (
-            <button
-              key={entry.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              className={
-                active
-                  ? "pack-tabs__tab pack-tabs__tab--active"
-                  : "pack-tabs__tab"
-              }
-              onClick={() => setCategory(entry.id)}
-            >
-              {entry.label}
-              {count > 0 ? (
-                <span className="pack-tabs__count">{count}</span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+      {searching ? (
+        <p className="list-inventory__scope" role="status" aria-live="polite">
+          {visibleItems.length}{" "}
+          {visibleItems.length === 1 ? "item" : "items"} found across all
+          categories
+        </p>
+      ) : (
+        <div
+          className="pack-tabs list-inventory__tabs"
+          role="tablist"
+          aria-label="Inventory categories"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={category === "all"}
+            className={
+              category === "all"
+                ? "pack-tabs__tab pack-tabs__tab--active"
+                : "pack-tabs__tab"
+            }
+            onClick={() => {
+              setCategory("all");
+              setExpandedId(null);
+            }}
+          >
+            All
+            {items.length > 0 ? (
+              <span className="pack-tabs__count">{items.length}</span>
+            ) : null}
+          </button>
+
+          {LIST_INVENTORY_CATEGORIES.map((entry) => {
+            const count = counts.get(entry.id) ?? 0;
+            const active = category === entry.id;
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={
+                  active
+                    ? "pack-tabs__tab pack-tabs__tab--active"
+                    : "pack-tabs__tab"
+                }
+                onClick={() => {
+                  setCategory(entry.id);
+                  setExpandedId(null);
+                }}
+              >
+                {entry.label}
+                {count > 0 ? (
+                  <span className="pack-tabs__count">{count}</span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <ul className="list-inventory__list" aria-label="Owned items">
         {visibleItems.length === 0 ? (
-          <li className="list-inventory__empty">
-            {search.trim()
-              ? "No items match your search."
-              : "No items in this category yet."}
-          </li>
+          <li className="list-inventory__empty">{emptyMessage}</li>
         ) : (
           visibleItems.map((item) => {
-            const isEditing = editingId === item.id;
+            const isEditing = expandedId === item.id;
             const isDragging = draggingId === item.id;
             const isDropTarget = dropTargetId === item.id;
-            const isMoving = movingId === item.id;
 
             return (
               <li
@@ -377,7 +459,7 @@ export function ListInventoryView() {
                   "list-inventory__row",
                   isDragging ? "list-inventory__row--dragging" : "",
                   isDropTarget ? "list-inventory__row--drop-target" : "",
-                  isMoving ? "list-inventory__row--moving" : "",
+                  isEditing ? "list-inventory__row--editing" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
@@ -385,104 +467,98 @@ export function ListInventoryView() {
                 onDrop={(event) => handleDrop(event, item.id)}
               >
                 <div className="list-inventory__row-main">
-                  <button
-                    type="button"
-                    className="list-inventory__drag"
-                    draggable
-                    aria-label={`Reorder ${item.name}`}
-                    onDragStart={(event) => handleDragStart(event, item.id)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <GripVertical size={16} strokeWidth={1.75} aria-hidden />
-                  </button>
-
-                  {isEditing ? (
-                    <input
-                      ref={editInputRef}
-                      className="list-inventory__rename"
-                      value={editName}
-                      onChange={(event) => setEditName(event.target.value)}
-                      onBlur={commitRename}
-                      onKeyDown={handleRenameKeyDown}
-                      aria-label="Rename item"
-                    />
-                  ) : (
-                    <span className="list-inventory__name">{item.name}</span>
-                  )}
-
-                  <div className="list-inventory__actions">
-                    {!isEditing ? (
-                      <>
-                        <button
-                          type="button"
-                          className="list-inventory__action"
-                          onClick={() => startRename(item)}
-                          aria-label={`Rename ${item.name}`}
-                        >
-                          <Pencil size={15} strokeWidth={1.75} aria-hidden />
-                        </button>
-                        <button
-                          type="button"
-                          className={[
-                            "list-inventory__action",
-                            isMoving ? "list-inventory__action--on" : "",
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
-                          onClick={() =>
-                            setMovingId(isMoving ? null : item.id)
-                          }
-                          aria-label={`Change category for ${item.name}`}
-                          aria-expanded={isMoving}
-                        >
-                          <Tag size={15} strokeWidth={1.75} aria-hidden />
-                        </button>
-                      </>
-                    ) : null}
+                  {canReorder ? (
                     <button
                       type="button"
-                      className="list-inventory__action list-inventory__action--danger"
-                      onClick={() => removeItem(item.id)}
-                      aria-label={`Remove ${item.name}`}
+                      className="list-inventory__drag"
+                      draggable
+                      aria-label={`Reorder ${item.name}`}
+                      onDragStart={(event) => handleDragStart(event, item.id)}
+                      onDragEnd={handleDragEnd}
                     >
-                      <Trash2 size={15} strokeWidth={1.75} aria-hidden />
+                      <GripVertical size={16} strokeWidth={1.75} aria-hidden />
                     </button>
-                  </div>
+                  ) : null}
+
+                  {isEditing ? (
+                    <>
+                      <input
+                        ref={editInputRef}
+                        className="list-inventory__rename"
+                        value={draftName}
+                        onChange={(event) => setDraftName(event.target.value)}
+                        onKeyDown={handleRenameKeyDown}
+                        aria-label={`Rename ${item.name}`}
+                      />
+                      <button
+                        type="button"
+                        className="list-inventory__done"
+                        onClick={closeEditor}
+                        aria-label="Done editing"
+                      >
+                        <Check size={16} strokeWidth={2.25} aria-hidden />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="list-inventory__hit"
+                      onClick={() => openEditor(item)}
+                      aria-expanded={false}
+                      aria-label={`Edit ${item.name}`}
+                    >
+                      <span className="list-inventory__name">{item.name}</span>
+                      {showCategoryTag ? (
+                        <span className="list-inventory__tag">
+                          {categoryLabel(item.category)}
+                        </span>
+                      ) : null}
+                    </button>
+                  )}
                 </div>
 
-                {isMoving ? (
-                  <div
-                    className="list-inventory__move"
-                    role="group"
-                    aria-label={`Move ${item.name} to category`}
-                  >
-                    <span className="list-inventory__move-label">Move to</span>
-                    <div className="list-inventory__move-chips">
-                      {LIST_INVENTORY_CATEGORIES.map((entry) => {
-                        const current = entry.id === item.category;
-                        return (
-                          <button
-                            key={entry.id}
-                            type="button"
-                            className={[
-                              "list-inventory__move-chip",
-                              current
-                                ? "list-inventory__move-chip--current"
-                                : "",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                            onClick={() => moveItem(item, entry.id)}
-                            aria-current={current}
-                          >
-                            {current ? (
-                              <Check size={12} strokeWidth={2.5} aria-hidden />
-                            ) : null}
-                            {entry.label}
-                          </button>
-                        );
-                      })}
+                {isEditing ? (
+                  <div className="list-inventory__editor">
+                    <div className="list-inventory__move">
+                      <span className="list-inventory__move-label">
+                        Move to
+                      </span>
+                      <div className="list-inventory__move-chips">
+                        {LIST_INVENTORY_CATEGORIES.map((entry) => {
+                          const current = entry.id === item.category;
+                          return (
+                            <button
+                              key={entry.id}
+                              type="button"
+                              className={[
+                                "list-inventory__move-chip",
+                                current
+                                  ? "list-inventory__move-chip--current"
+                                  : "",
+                              ]
+                                .filter(Boolean)
+                                .join(" ")}
+                              onClick={() => moveItem(item.id, entry.id)}
+                              aria-current={current}
+                            >
+                              {current ? (
+                                <Check size={12} strokeWidth={2.5} aria-hidden />
+                              ) : null}
+                              {entry.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
+
+                    <button
+                      type="button"
+                      className="list-inventory__remove"
+                      onClick={() => removeItem(item.id)}
+                    >
+                      <Trash2 size={14} strokeWidth={1.9} aria-hidden />
+                      Remove from stash
+                    </button>
                   </div>
                 ) : null}
               </li>

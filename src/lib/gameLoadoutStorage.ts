@@ -30,7 +30,7 @@ export const GAME_SLOTS: GameSlotId[] = [
   "other",
 ];
 
-const LOADOUT_KEY = "secretstash-game-loadout-v3";
+const LOADOUT_KEY = "secretstash-game-loadout-v4";
 
 export type GameLoadout = Record<GameSlotId, string[]>;
 

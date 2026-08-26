@@ -2998,10 +2998,23 @@
   padding: 3px;
 }
 
+.list-inventory__search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.list-inventory__search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
 .list-inventory__search {
   width: 100%;
   min-height: 36px;
-  padding: 7px 14px;
+  padding: 7px 34px 7px 33px;
   border-radius: 999px;
   border: 1px solid rgba(13, 168, 92, 0.16);
   background: rgba(255, 255, 255, 0.62);
@@ -3020,9 +3033,39 @@
   outline-offset: 1px;
 }
 
+.list-inventory__search-clear {
+  position: absolute;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted);
+  background: rgba(47, 47, 47, 0.08);
+  cursor: pointer;
+}
+
+.list-inventory__search-clear:hover {
+  color: var(--text-primary);
+  background: rgba(47, 47, 47, 0.14);
+}
+
 .list-inventory__tabs {
   margin: 0;
   flex-shrink: 0;
+}
+
+/* Replaces the category chips while searching, to show the wider scope */
+.list-inventory__scope {
+  margin: 0;
+  flex-shrink: 0;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
 }
 
 .list-inventory__list {
@@ -3067,8 +3110,9 @@
   flex: 1;
 }
 
-.list-inventory__row--moving {
+.list-inventory__row--editing {
   border-color: rgba(13, 168, 92, 0.38);
+  box-shadow: 0 1px 8px rgba(13, 168, 92, 0.1);
 }
 
 .list-inventory__row--dragging {
@@ -3125,46 +3169,99 @@
   outline-offset: 1px;
 }
 
-.list-inventory__actions {
+/*
+ * The whole row is the affordance — one tap opens the editor below, replacing
+ * the old pencil/tag/trash trio and giving the item name the full width.
+ */
+.list-inventory__hit {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.list-inventory__action {
+.list-inventory__hit:hover {
+  background: rgba(13, 168, 92, 0.06);
+}
+
+.list-inventory__hit:focus-visible {
+  outline: 2px solid var(--emerald-jewel);
+  outline-offset: 1px;
+}
+
+/* Shown only in mixed lists (All / search), where the category adds context */
+.list-inventory__tag {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(13, 168, 92, 0.09);
+  color: var(--emerald-deep);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.list-inventory__done {
+  flex-shrink: 0;
   width: 30px;
   height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: var(--text-muted);
-}
-
-.list-inventory__action:hover {
-  color: var(--emerald-jewel);
-  background: rgba(13, 168, 92, 0.08);
-}
-
-.list-inventory__action--danger:hover {
-  color: #b91c1c;
-  background: rgba(185, 28, 28, 0.08);
-}
-
-.list-inventory__action--on {
   color: var(--emerald-deep);
   background: var(--emerald-mist);
+  cursor: pointer;
+}
+
+.list-inventory__done:hover {
+  background: rgba(13, 168, 92, 0.18);
+}
+
+.list-inventory__editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 2px 2px 6px;
+  padding-top: 9px;
+  border-top: 1px dashed rgba(13, 168, 92, 0.2);
+  animation: move-row-in 0.15s ease-out;
+}
+
+.list-inventory__remove {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(185, 28, 28, 0.22);
+  background: rgba(185, 28, 28, 0.05);
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.list-inventory__remove:hover {
+  border-color: rgba(185, 28, 28, 0.4);
+  background: rgba(185, 28, 28, 0.1);
 }
 
 .list-inventory__move {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin: 8px 2px 0 32px;
-  padding-top: 8px;
-  border-top: 1px dashed rgba(13, 168, 92, 0.2);
-  animation: move-row-in 0.15s ease-out;
 }
 
 @keyframes move-row-in {
@@ -3623,10 +3720,16 @@
   transform: scale(0.94);
 }
 
-.game-inv__slot-item-img {
+.game-inv__slot-item-initials {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--emerald-deep);
 }
 
 .game-inv__equip--filled {
@@ -3700,11 +3803,16 @@
   transform: scale(0.97);
 }
 
-.game-inv__card-img {
+.game-inv__card-glyph {
   flex: 1;
   width: 100%;
   min-height: 0;
-  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(13, 168, 92, 0.06);
+  color: var(--emerald-jewel);
 }
 
 .game-inv__card-name {

@@ -6,7 +6,6 @@ import {
   TrousersIcon,
   type GarmentIconProps,
 } from "./Icons";
-import { getItemImageUrl } from "../lib/inventoryCatalog";
 import {
   GAME_SLOTS,
   GAME_SLOT_LABELS,
@@ -35,21 +34,32 @@ const SLOT_ICONS: Record<GameSlotId, ComponentType<GarmentIconProps>> = {
   other: Package,
 };
 
-function ItemPhoto({
-  item,
-  className,
-}: {
-  item: ListInventoryItem;
-  className?: string;
-}) {
+/** Items carry no photo, so a card leans on its category icon plus the name. */
+function ItemGlyph({ item }: { item: ListInventoryItem }) {
+  const Icon = SLOT_ICONS[item.category];
   return (
-    <img
-      className={className}
-      src={getItemImageUrl(item.id)}
-      alt={item.name}
-      loading="lazy"
-      draggable={false}
-    />
+    <span className="game-inv__card-glyph" aria-hidden>
+      <Icon size={22} strokeWidth={1.75} />
+    </span>
+  );
+}
+
+function initials(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0]!.slice(0, 2).toUpperCase();
+  return (words[0]![0]! + words[1]![0]!).toUpperCase();
+}
+
+/**
+ * Packed slots are too small for a name, and every item in a slot shares one
+ * category icon — initials are the only thing that tells them apart.
+ */
+function ItemInitials({ item }: { item: ListInventoryItem }) {
+  return (
+    <span className="game-inv__slot-item-initials" aria-hidden>
+      {initials(item.name)}
+    </span>
   );
 }
 
@@ -154,9 +164,11 @@ export function GameStyleInventoryView() {
         <div className="game-inv__grid">
           {stashItems.length === 0 ? (
             <p className="game-inv__empty">
-              {homeItems.length === 0
-                ? "Everything is packed for your trip."
-                : "No items in this category at home."}
+              {ownedItems.length === 0
+                ? "Add items to your stash first, then pack them here."
+                : homeItems.length === 0
+                  ? "Everything is packed for your trip."
+                  : "No items in this category at home."}
             </p>
           ) : (
             stashItems.map((item) => (
@@ -167,7 +179,7 @@ export function GameStyleInventoryView() {
                 onClick={() => packItem(item)}
                 aria-label={`Pack ${item.name} for trip`}
               >
-                <ItemPhoto item={item} className="game-inv__card-img" />
+                <ItemGlyph item={item} />
                 <span className="game-inv__card-name">{item.name}</span>
               </button>
             ))
@@ -227,9 +239,10 @@ function LoadoutSlot({
               type="button"
               className="game-inv__slot-item"
               onClick={() => onUnpack(item.id)}
+              title={item.name}
               aria-label={`${item.name}. Tap to leave at home.`}
             >
-              <ItemPhoto item={item} className="game-inv__slot-item-img" />
+              <ItemInitials item={item} />
             </button>
           ))}
         </div>
